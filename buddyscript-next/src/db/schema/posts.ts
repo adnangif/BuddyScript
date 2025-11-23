@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   pgTable,
   text,
@@ -16,6 +17,7 @@ export const posts = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
     imageUrl: text("image_url"),
+    isPublic: boolean("is_public").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

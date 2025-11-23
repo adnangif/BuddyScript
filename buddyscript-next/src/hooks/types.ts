@@ -24,6 +24,7 @@ export type FeedPost = {
   id: string;
   content: string;
   imageUrl?: string | null;
+  isPublic: boolean;
   createdAt: string;
   author: PostAuthor;
   likeCount?: number;

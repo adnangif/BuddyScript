@@ -89,11 +89,14 @@ const friendActivity = [
 function PostCard({ post }: { post: FeedPost }) {
   const [showComments, setShowComments] = useState(false);
   const [commentContent, setCommentContent] = useState("");
+  const user = useAuthStore((state) => state.user);
   
   const { mutate: likePost, isPending: isLiking } = useLikePost(post.id);
   const { mutate: unlikePost, isPending: isUnliking } = useUnlikePost(post.id);
   const { mutate: createComment, isPending: isCommenting } = useCreateComment(post.id);
   const { data: commentsData, isLoading: isLoadingComments } = usePostComments(post.id);
+  
+  const isOwnPost = user?.id === post.author.id;
 
   const handleLikeToggle = () => {
     if (isLiking || isUnliking) return;
@@ -151,6 +154,21 @@ function PostCard({ post }: { post: FeedPost }) {
             <div className="_feed_inner_timeline_post_box_txt">
               <h4 className="_feed_inner_timeline_post_box_title">
                 {post.author.firstName} {post.author.lastName}
+                {!post.isPublic && isOwnPost && (
+                  <span
+                    style={{
+                      marginLeft: "8px",
+                      fontSize: "12px",
+                      padding: "2px 8px",
+                      background: "#f0f0f0",
+                      borderRadius: "4px",
+                      color: "#666",
+                      fontWeight: "normal",
+                    }}
+                  >
+                    🔒 Private
+                  </span>
+                )}
               </h4>
               <p className="_feed_inner_timeline_post_box_para">
                 {formatTimestamp(post.createdAt)}
@@ -290,6 +308,7 @@ export default function FeedsPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data, isLoading, isFetching, refetch } = usePosts();
   const {
@@ -402,8 +421,9 @@ export default function FeedsPage() {
         setIsUploadingImage(false);
       }
 
-      await createPost({ content: trimmed, imageUrl });
+      await createPost({ content: trimmed, imageUrl, isPublic });
       setContent("");
+      setIsPublic(true);
       handleRemoveImage();
       toast.success("Post published!");
     } catch (error) {
@@ -597,43 +617,71 @@ export default function FeedsPage() {
                           </div>
                         )}
 
-                        <div className="_feed_inner_text_area_btn" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                          {/* Image Upload Button */}
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageSelect}
-                            disabled={isPublishing || isUploadingImage}
-                            style={{ display: "none" }}
-                            id="image-upload-input"
-                          />
-                          <label
-                            htmlFor="image-upload-input"
-                            style={{
-                              cursor: isPublishing || isUploadingImage ? "not-allowed" : "pointer",
-                              opacity: isPublishing || isUploadingImage ? 0.5 : 1,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "8px 12px",
-                              background: "#f0f0f0",
-                              borderRadius: "6px",
-                              fontSize: "14px",
-                            }}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              fill="currentColor"
-                              viewBox="0 0 16 16"
+                        <div className="_feed_inner_text_area_btn" style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                            {/* Image Upload Button */}
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageSelect}
+                              disabled={isPublishing || isUploadingImage}
+                              style={{ display: "none" }}
+                              id="image-upload-input"
+                            />
+                            <label
+                              htmlFor="image-upload-input"
+                              style={{
+                                cursor: isPublishing || isUploadingImage ? "not-allowed" : "pointer",
+                                opacity: isPublishing || isUploadingImage ? 0.5 : 1,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "8px 12px",
+                                background: "#f0f0f0",
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                              }}
                             >
-                              <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
-                              <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z" />
-                            </svg>
-                            {selectedImage ? "Change" : "Image"}
-                          </label>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                                viewBox="0 0 16 16"
+                              >
+                                <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
+                                <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z" />
+                              </svg>
+                              {selectedImage ? "Change" : "Image"}
+                            </label>
+
+                            {/* Privacy Toggle */}
+                            <button
+                              type="button"
+                              onClick={() => setIsPublic(!isPublic)}
+                              disabled={isPublishing || isUploadingImage}
+                              style={{
+                                cursor: isPublishing || isUploadingImage ? "not-allowed" : "pointer",
+                                opacity: isPublishing || isUploadingImage ? 0.5 : 1,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "8px 12px",
+                                background: isPublic ? "#e8f5e9" : "#fff3e0",
+                                border: "none",
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                                color: isPublic ? "#2e7d32" : "#e65100",
+                                fontWeight: "500",
+                              }}
+                            >
+                              <span style={{ fontSize: "16px" }}>
+                                {isPublic ? "🌍" : "🔒"}
+                              </span>
+                              {isPublic ? "Public" : "Private"}
+                            </button>
+                          </div>
 
                           <button
                             type="submit"

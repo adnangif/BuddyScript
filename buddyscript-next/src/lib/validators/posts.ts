@@ -7,6 +7,7 @@ export const createPostSchema = z.object({
     .min(1, "Post cannot be empty")
     .max(500, "Post must be 500 characters or fewer"),
   imageUrl: z.url().optional().nullable(),
+  isPublic: z.boolean().optional().default(true),
 });
 
 export type CreatePostInput = z.infer<typeof createPostSchema>;

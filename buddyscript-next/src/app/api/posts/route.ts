@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 
 import { comments, postLikes, posts, users } from "@/db/schema";
 import { db } from "@/lib/db";
@@ -10,6 +10,7 @@ const mapPost = async (row: {
   id: string;
   content: string;
   imageUrl: string | null;
+  isPublic: boolean;
   createdAt: Date;
   authorId: string;
   authorFirstName: string;
@@ -40,6 +41,7 @@ const mapPost = async (row: {
     id: row.id,
     content: row.content,
     imageUrl: row.imageUrl,
+    isPublic: row.isPublic,
     createdAt: row.createdAt.toISOString(),
     author: {
       id: row.authorId,
@@ -96,11 +98,25 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Build where clause: show public posts OR posts from the authenticated user
+    let whereClause;
+    if (userId) {
+      // If user is authenticated, show public posts OR their own posts
+      whereClause = or(
+        eq(posts.isPublic, true),
+        eq(posts.userId, userId)
+      );
+    } else {
+      // If not authenticated, show only public posts
+      whereClause = eq(posts.isPublic, true);
+    }
+
     const rows = await db
       .select({
         id: posts.id,
         content: posts.content,
         imageUrl: posts.imageUrl,
+        isPublic: posts.isPublic,
         createdAt: posts.createdAt,
         authorId: users.id,
         authorFirstName: users.firstName,
@@ -108,6 +124,7 @@ export async function GET(request: NextRequest) {
       })
       .from(posts)
       .innerJoin(users, eq(posts.userId, users.id))
+      .where(whereClause)
       .orderBy(desc(posts.createdAt));
 
     const mappedPosts = await Promise.all(
@@ -162,6 +179,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         content: parsed.data.content.trim(),
         imageUrl: parsed.data.imageUrl ?? null,
+        isPublic: parsed.data.isPublic ?? true,
       })
       .returning();
 
@@ -171,6 +189,7 @@ export async function POST(request: NextRequest) {
       id: createdPost.id,
       content: createdPost.content,
       imageUrl: createdPost.imageUrl,
+      isPublic: createdPost.isPublic,
       createdAt,
       authorId: user.id,
       authorFirstName: user.firstName,
