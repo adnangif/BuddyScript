@@ -9,8 +9,6 @@ if (!jwtSecret) {
 type BaseJwtPayload = {
   sub: string;
   email: string;
-  firstName: string;
-  lastName: string;
 };
 
 export const signAuthToken = (payload: BaseJwtPayload, options?: SignOptions) =>

@@ -1,127 +1,308 @@
-import Image from "next/image";
-import Link from "next/link";
+"use client";
 
-import { RegisterForm } from "@/components/auth/RegisterForm";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { useRegister } from "@/hooks/useRegister";
+import { registerSchema } from "@/lib/validators/auth";
+
+type FormState = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
+const initialState: FormState = {
+  email: "",
+  password: "",
+  confirmPassword: "",
+};
 
 export default function RegisterPage() {
+  const [values, setValues] = useState<FormState>(initialState);
+  const [clientErrors, setClientErrors] = useState<
+    Partial<Record<keyof FormState, string>>
+  >({});
+  const router = useRouter();
+  const { mutateAsync, isPending, isSuccess, error } = useRegister();
+
+  const statusMessage = useMemo(() => {
+    if (isSuccess) {
+      return "Registration successful! Redirecting to login...";
+    }
+
+    if (error?.message) {
+      return error.message;
+    }
+
+    return "";
+  }, [error, isSuccess]);
+
+  const handleInputChange =
+    (field: keyof FormState) =>
+    (event: ChangeEvent<HTMLInputElement>): void => {
+      const { value } = event.target;
+      setValues((prev) => ({ ...prev, [field]: value }));
+      setClientErrors((prev) => {
+        if (!prev[field]) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    };
+
+  const getErrorId = (field: keyof FormState) =>
+    clientErrors[field] ? `registration-${field}-error` : undefined;
+
+  const renderError = (field: keyof FormState) => {
+    const message = clientErrors[field];
+    if (!message) {
+      return null;
+    }
+
+    return (
+      <p
+        id={`registration-${field}-error`}
+        className="_social_registration_error"
+        role="alert"
+      >
+        {message}
+      </p>
+    );
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const { confirmPassword, ...registerValues } = values;
+    const parsed = registerSchema.safeParse(registerValues);
+
+    const nextErrors: Partial<Record<keyof FormState, string>> = {};
+
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      for (const [field, messages] of Object.entries(fieldErrors)) {
+        const message = messages?.[0];
+        if (message) {
+          nextErrors[field as keyof FormState] = message;
+        }
+      }
+    }
+
+    if (registerValues.password !== confirmPassword) {
+      nextErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (!parsed.success || registerValues.password !== confirmPassword) {
+      setClientErrors(nextErrors);
+      return;
+    }
+
+    try {
+      await mutateAsync(parsed.data);
+      setValues(initialState);
+      setClientErrors({});
+      router.push("/login");
+    } catch {
+      // errors handled via mutation state
+    }
+  };
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#050B1D] text-white">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(33,53,109,0.8),#040717_68%)]"
-        aria-hidden
-      />
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute -left-20 top-16 hidden lg:block">
-          <div className="relative h-72 w-72">
-            <Image
-              src="/icons/shape1.svg"
-              alt=""
-              fill
-              sizes="288px"
-              className="opacity-90"
-              priority
-            />
-          </div>
-        </div>
-        <div className="absolute right-[-40px] top-10 hidden lg:block">
-          <div className="relative h-64 w-64">
-            <Image
-              src="/icons/shape2.svg"
-              alt=""
-              fill
-              sizes="256px"
-              className="opacity-70"
-              priority
-            />
-          </div>
-        </div>
-        <div className="absolute bottom-[-40px] right-0 hidden lg:block">
-          <div className="relative h-72 w-72">
-            <Image
-              src="/icons/shape3.svg"
-              alt=""
-              fill
-              sizes="288px"
-              className="opacity-70"
-              priority
-            />
-          </div>
-        </div>
-        <div className="absolute inset-0 opacity-60 blur-[180px]">
-          <div className="absolute left-10 top-32 h-48 w-48 rounded-full bg-[#FF7A45]/40" />
-          <div className="absolute right-16 top-64 h-56 w-56 rounded-full bg-[#9747FF]/30" />
-          <div className="absolute bottom-10 left-1/3 h-40 w-40 rounded-full bg-[#34D399]/20" />
-        </div>
+    <main className="_social_registration_wrapper _layout_main_wrapper">
+      <div className="_shape_one" aria-hidden="true">
+        <img src="/icons/shape1.svg" alt="" className="_shape_img" />
+        <img src="/icons/dark_shape.svg" alt="" className="_dark_shape" />
       </div>
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-4 py-12 lg:flex-row lg:items-center lg:px-8 xl:gap-16">
-        <section className="flex-1 space-y-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-5 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-white/70 transition hover:border-white/40"
-          >
-            <Image
-              src="/icons/logo.svg"
-              alt="BuddyScript"
-              width={120}
-              height={32}
-              priority
-            />
-            Home
-          </Link>
-          <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.6em] text-[#FFC680]">
-              Get started now
-            </p>
-            <h1 className="text-4xl font-bold leading-tight text-white md:text-5xl">
-              Create your BuddyScript account and join the conversation.
-            </h1>
-            <p className="text-base text-white/70 md:text-lg">
-              Inspired by our design system, this experience blends glowing
-              gradients, floating shapes, and a focused form so you can start
-              sharing with your favorite people right away.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(8,15,40,0.45)]">
-              <p className="text-xs uppercase tracking-[0.4em] text-white/60">
-                Privacy-first
-              </p>
-              <p className="mt-3 text-2xl font-semibold text-white">Secure</p>
-              <p className="text-sm text-white/60">
-                Verification, encrypted sessions, and gentle onboarding.
-              </p>
+      <div className="_shape_two" aria-hidden="true">
+        <img src="/icons/shape2.svg" alt="" className="_shape_img" />
+        <img
+          src="/icons/dark_shape1.svg"
+          alt=""
+          className="_dark_shape _dark_shape_opacity"
+        />
+      </div>
+      <div className="_shape_three" aria-hidden="true">
+        <img src="/icons/shape3.svg" alt="" className="_shape_img" />
+        <img
+          src="/icons/dark_shape2.svg"
+          alt=""
+          className="_dark_shape _dark_shape_opacity"
+        />
+      </div>
+
+      <section className="_social_registration_wrap">
+        <div className="container">
+          <div className="row align-items-center">
+            <div className="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+              <div className="_social_registration_right">
+                <div className="_social_registration_right_image">
+                  <img src="/icons/registration.png" alt="Registration" />
+                </div>
+                <div className="_social_registration_right_image_dark">
+                  <img src="/icons/registration1.png" alt="Registration" />
+                </div>
+              </div>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(8,15,40,0.45)]">
-              <p className="text-xs uppercase tracking-[0.4em] text-white/60">
-                Community vibes
-              </p>
-              <p className="mt-3 text-2xl font-semibold text-white">Connected</p>
-              <p className="text-sm text-white/60">
-                Stay close to friends, react in real time, and relive memories.
-              </p>
-            </div>
-          </div>
-          <div className="relative mt-2">
-            <div className="absolute inset-0 rounded-[36px] bg-gradient-to-r from-[#FF8A4F]/40 via-[#FF5F6D]/30 to-[#7C3AED]/30 blur-3xl" />
-            <div className="relative rounded-[36px] border border-white/10 bg-white/5 p-6 shadow-[0_40px_120px_rgba(5,10,30,0.75)] backdrop-blur-xl">
-              <div className="relative aspect-[4/3] w-full">
-                <Image
-                  src="/icons/registration.png"
-                  alt="Community preview"
-                  fill
-                  sizes="(min-width: 1024px) 520px, 100vw"
-                  className="object-contain drop-shadow-[0_25px_70px_rgba(4,8,20,0.8)]"
-                  priority
-                />
+
+            <div className="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+              <div className="_social_registration_content">
+                <div className="_social_registration_right_logo _mar_b28">
+                  <img src="/icons/logo.svg" alt="BuddyScript" className="_right_logo" />
+                </div>
+                <p className="_social_registration_content_para _mar_b8">
+                  Get Started Now
+                </p>
+                <h4 className="_social_registration_content_title _titl4 _mar_b50">
+                  Registration
+                </h4>
+                <button
+                  type="button"
+                  className="_social_registration_content_btn _mar_b40"
+                >
+                  <img src="/icons/google.svg" alt="Google" className="_google_img" />
+                  <span>Register with google</span>
+                </button>
+                <div className="_social_registration_content_bottom_txt _mar_b40">
+                  <span>Or</span>
+                </div>
+
+                <form
+                  className="_social_registration_form"
+                  noValidate
+                  onSubmit={handleSubmit}
+                >
+                  <div className="row">
+                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                      <div className="_social_registration_form_input _mar_b14">
+                        <label
+                          className="_social_registration_label _mar_b8"
+                          htmlFor="registration-email"
+                        >
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          id="registration-email"
+                          name="email"
+                          className="form-control _social_registration_input"
+                          value={values.email}
+                          onChange={handleInputChange("email")}
+                          aria-invalid={Boolean(clientErrors.email)}
+                          aria-describedby={getErrorId("email")}
+                          autoComplete="email"
+                          required
+                        />
+                        {renderError("email")}
+                      </div>
+                    </div>
+                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                      <div className="_social_registration_form_input _mar_b14">
+                        <label
+                          className="_social_registration_label _mar_b8"
+                          htmlFor="registration-password"
+                        >
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          id="registration-password"
+                          name="password"
+                          className="form-control _social_registration_input"
+                          value={values.password}
+                          onChange={handleInputChange("password")}
+                          aria-invalid={Boolean(clientErrors.password)}
+                          aria-describedby={getErrorId("password")}
+                          autoComplete="new-password"
+                          required
+                        />
+                        {renderError("password")}
+                      </div>
+                    </div>
+                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                      <div className="_social_registration_form_input _mar_b14">
+                        <label
+                          className="_social_registration_label _mar_b8"
+                          htmlFor="registration-confirm-password"
+                        >
+                          Repeat Password
+                        </label>
+                        <input
+                          type="password"
+                          id="registration-confirm-password"
+                          name="confirmPassword"
+                          className="form-control _social_registration_input"
+                          value={values.confirmPassword}
+                          onChange={handleInputChange("confirmPassword")}
+                          aria-invalid={Boolean(clientErrors.confirmPassword)}
+                          aria-describedby={getErrorId("confirmPassword")}
+                          autoComplete="new-password"
+                          required
+                        />
+                        {renderError("confirmPassword")}
+                      </div>
+                    </div>
+                  </div>
+
+                  {statusMessage ? (
+                    <div
+                      className="_social_registration_form_status _mar_b14"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {statusMessage}
+                    </div>
+                  ) : null}
+
+                  <div className="row">
+                    <div className="col-lg-12 col-xl-12 col-md-12 col-sm-12">
+                      <div className="form-check _social_registration_form_check">
+                        <input
+                          className="form-check-input _social_registration_form_check_input"
+                          type="radio"
+                          id="registration-terms"
+                          defaultChecked
+                        />
+                        <label
+                          className="form-check-label _social_registration_form_check_label"
+                          htmlFor="registration-terms"
+                        >
+                          I agree to terms &amp; conditions
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-lg-12 col-md-12 col-xl-12 col-sm-12">
+                      <div className="_social_registration_form_btn _mar_t40 _mar_b24">
+                        <button
+                          type="submit"
+                          className="_social_registration_form_btn_link _btn1"
+                          disabled={isPending}
+                        >
+                          {isPending ? "Creating..." : "Create account"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+
+                <div className="row">
+                  <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                    <div className="_social_registration_bottom_txt">
+                      <p className="_social_registration_bottom_txt_para">
+                        Already have an account? <a href="/login">Login Now</a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </section>
-        <section className="w-full max-w-xl">
-          <RegisterForm />
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
-

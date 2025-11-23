@@ -5,8 +5,6 @@ import { useAuthStore } from "@/stores/auth-store";
 type RegisterResponse = {
   user: {
     id: string;
-    firstName: string;
-    lastName: string;
     email: string;
   };
   token: string;

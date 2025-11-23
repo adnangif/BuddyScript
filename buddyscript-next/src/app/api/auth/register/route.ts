@@ -7,7 +7,16 @@ import { registerSchema } from "@/lib/validators/auth";
 import { signAuthToken } from "@/lib/jwt";
 
 export async function POST(request: Request) {
-  const rawBody = await request.json();
+  let rawBody: unknown;
+  try {
+    console.log(rawBody)
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json(
+      { message: "Invalid or missing JSON body" },
+      { status: 400 },
+    );
+  }
   const result = registerSchema.safeParse(rawBody);
 
   if (!result.success) {
@@ -19,7 +28,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { firstName, lastName, email, password } = result.data;
+  const { email, password } = result.data;
 
   try {
     const existingUser = await db.query.users.findFirst({
@@ -38,8 +47,6 @@ export async function POST(request: Request) {
     const [createdUser] = await db
       .insert(users)
       .values({
-        firstName,
-        lastName,
         email: email.toLowerCase(),
         passwordHash,
       })
@@ -48,16 +55,12 @@ export async function POST(request: Request) {
     const token = signAuthToken({
       sub: createdUser.id,
       email: createdUser.email,
-      firstName: createdUser.firstName,
-      lastName: createdUser.lastName,
     });
 
     return NextResponse.json(
       {
         user: {
           id: createdUser.id,
-          firstName: createdUser.firstName,
-          lastName: createdUser.lastName,
           email: createdUser.email,
         },
         token,

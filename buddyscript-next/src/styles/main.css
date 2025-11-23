@@ -449,6 +449,13 @@
     line-height: 1.4;
     color: var(--color3);
 }
+._social_registration_form_btn_link {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
 ._social_registration_label {
     font-weight: 500;
     font-size: 16px;

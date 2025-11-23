@@ -1,39 +1,4 @@
-/* stylelint-disable at-rule-no-unknown */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-
-:root {
-  --background: #0f172a;
-  --foreground: #0f172a;
-  --card-background: #ffffff;
-  --accent: #f97316;
-  --accent-foreground: #ffffff;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
+@import "@/styles/bootstrap.min.css";
+@import "@/styles/common.css";
+@import "@/styles/main.css";
+@import "@/styles/responsive.css";
