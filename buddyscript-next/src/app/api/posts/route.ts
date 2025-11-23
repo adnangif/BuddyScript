@@ -9,6 +9,7 @@ import { createPostSchema } from "@/lib/validators/posts";
 const mapPost = (row: {
   id: string;
   content: string;
+  imageUrl: string | null;
   createdAt: Date;
   authorId: string;
   authorFirstName: string;
@@ -16,6 +17,7 @@ const mapPost = (row: {
 }) => ({
   id: row.id,
   content: row.content,
+  imageUrl: row.imageUrl,
   createdAt: row.createdAt.toISOString(),
   author: {
     id: row.authorId,
@@ -53,6 +55,7 @@ export async function GET() {
       .select({
         id: posts.id,
         content: posts.content,
+        imageUrl: posts.imageUrl,
         createdAt: posts.createdAt,
         authorId: users.id,
         authorFirstName: users.firstName,
@@ -109,6 +112,7 @@ export async function POST(request: NextRequest) {
       .values({
         userId: user.id,
         content: parsed.data.content.trim(),
+        imageUrl: parsed.data.imageUrl ?? null,
       })
       .returning();
 
@@ -119,6 +123,7 @@ export async function POST(request: NextRequest) {
         post: mapPost({
           id: createdPost.id,
           content: createdPost.content,
+          imageUrl: createdPost.imageUrl,
           createdAt,
           authorId: user.id,
           authorFirstName: user.firstName,

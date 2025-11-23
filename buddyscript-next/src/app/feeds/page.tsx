@@ -16,6 +16,7 @@ import { useCreatePost } from "@/hooks/useCreatePost";
 import { FeedPost } from "@/hooks/types";
 import { usePosts } from "@/hooks/usePosts";
 import { useAuthStore } from "@/stores/auth-store";
+import { uploadImage } from "@/lib/upload-image";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
@@ -86,6 +87,10 @@ export default function FeedsPage() {
   const user = useAuthStore((state) => state.user);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [content, setContent] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { data, isLoading, isFetching, refetch } = usePosts();
   const {
     mutateAsync: createPost,
@@ -135,6 +140,41 @@ export default function FeedsPage() {
     setContent(event.target.value);
   };
 
+  const handleImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 32MB)
+    const maxSize = 32 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Image size must be less than 32MB");
+      return;
+    }
+
+    setSelectedImage(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = content.trim();
@@ -145,8 +185,26 @@ export default function FeedsPage() {
     }
 
     try {
-      await createPost({ content: trimmed });
+      let imageUrl: string | null = null;
+
+      // Upload image first if selected
+      if (selectedImage) {
+        setIsUploadingImage(true);
+        try {
+          imageUrl = await uploadImage(selectedImage);
+        } catch (error) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to upload image",
+          );
+          setIsUploadingImage(false);
+          return;
+        }
+        setIsUploadingImage(false);
+      }
+
+      await createPost({ content: trimmed, imageUrl });
       setContent("");
+      handleRemoveImage();
       toast.success("Post published!");
     } catch (error) {
       toast.error(
@@ -294,16 +352,93 @@ export default function FeedsPage() {
                           value={content}
                           onChange={handleContentChange}
                           maxLength={500}
-                          disabled={isPublishing}
+                          disabled={isPublishing || isUploadingImage}
                         />
                         <label className="_feed_textarea_label" htmlFor="feed-post-textarea">
                           Write something ...
                         </label>
-                        <div className="_feed_inner_text_area_btn">
+                        
+                        {/* Image Preview */}
+                        {imagePreview && (
+                          <div style={{ marginTop: "12px", position: "relative" }}>
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              style={{
+                                maxWidth: "100%",
+                                maxHeight: "300px",
+                                borderRadius: "8px",
+                                objectFit: "contain",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={handleRemoveImage}
+                              disabled={isPublishing || isUploadingImage}
+                              style={{
+                                position: "absolute",
+                                top: "8px",
+                                right: "8px",
+                                background: "rgba(0, 0, 0, 0.6)",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "50%",
+                                width: "32px",
+                                height: "32px",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "20px",
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="_feed_inner_text_area_btn" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                          {/* Image Upload Button */}
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            disabled={isPublishing || isUploadingImage}
+                            style={{ display: "none" }}
+                            id="image-upload-input"
+                          />
+                          <label
+                            htmlFor="image-upload-input"
+                            style={{
+                              cursor: isPublishing || isUploadingImage ? "not-allowed" : "pointer",
+                              opacity: isPublishing || isUploadingImage ? 0.5 : 1,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "8px 12px",
+                              background: "#f0f0f0",
+                              borderRadius: "6px",
+                              fontSize: "14px",
+                            }}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              fill="currentColor"
+                              viewBox="0 0 16 16"
+                            >
+                              <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
+                              <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z" />
+                            </svg>
+                            {selectedImage ? "Change" : "Image"}
+                          </label>
+
                           <button
                             type="submit"
                             className="_feed_inner_text_area_btn_link"
-                            disabled={isPublishing}
+                            disabled={isPublishing || isUploadingImage}
                           >
                             <svg
                               className="_mar_img"
@@ -320,7 +455,13 @@ export default function FeedsPage() {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            <span>{isPublishing ? "Posting..." : "Post"}</span>
+                            <span>
+                              {isUploadingImage
+                                ? "Uploading..."
+                                : isPublishing
+                                ? "Posting..."
+                                : "Post"}
+                            </span>
                           </button>
                         </div>
                       </form>
@@ -385,6 +526,19 @@ export default function FeedsPage() {
                             </div>
                           </div>
                           <p className="_feed_inner_timeline_post_title">{post.content}</p>
+                          {post.imageUrl && (
+                            <div style={{ marginTop: "16px" }}>
+                              <img
+                                src={post.imageUrl}
+                                alt="Post attachment"
+                                style={{
+                                  maxWidth: "100%",
+                                  borderRadius: "8px",
+                                  display: "block",
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       </article>
                     ))}
