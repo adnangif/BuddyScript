@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
-import { posts, users } from "@/db/schema";
+import { comments, postLikes, posts, users } from "@/db/schema";
 import { db } from "@/lib/db";
 import { verifyAuthToken } from "@/lib/jwt";
 import { createPostSchema } from "@/lib/validators/posts";
 
-const mapPost = (row: {
+const mapPost = async (row: {
   id: string;
   content: string;
   imageUrl: string | null;
@@ -14,17 +14,43 @@ const mapPost = (row: {
   authorId: string;
   authorFirstName: string;
   authorLastName: string;
-}) => ({
-  id: row.id,
-  content: row.content,
-  imageUrl: row.imageUrl,
-  createdAt: row.createdAt.toISOString(),
-  author: {
-    id: row.authorId,
-    firstName: row.authorFirstName,
-    lastName: row.authorLastName,
-  },
-});
+}, userId?: string) => {
+  // Get like count
+  const likeCountResult = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(postLikes)
+    .where(eq(postLikes.postId, row.id));
+
+  // Get comment count
+  const commentCountResult = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(comments)
+    .where(eq(comments.postId, row.id));
+
+  // Check if user has liked this post
+  let hasUserLiked = false;
+  if (userId) {
+    const userLike = await db.query.postLikes.findFirst({
+      where: and(eq(postLikes.postId, row.id), eq(postLikes.userId, userId)),
+    });
+    hasUserLiked = !!userLike;
+  }
+
+  return {
+    id: row.id,
+    content: row.content,
+    imageUrl: row.imageUrl,
+    createdAt: row.createdAt.toISOString(),
+    author: {
+      id: row.authorId,
+      firstName: row.authorFirstName,
+      lastName: row.authorLastName,
+    },
+    likeCount: likeCountResult[0]?.count ?? 0,
+    commentCount: commentCountResult[0]?.count ?? 0,
+    hasUserLiked,
+  };
+};
 
 const authenticateRequest = async (request: NextRequest) => {
   const authHeader = request.headers.get("authorization");
@@ -49,8 +75,27 @@ const authenticateRequest = async (request: NextRequest) => {
   }
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Get user from token if available
+    const authHeader = request.headers.get("authorization");
+    let userId: string | undefined;
+
+    if (authHeader) {
+      const [scheme, token] = authHeader.split(" ");
+      if (scheme?.toLowerCase() === "bearer" && token) {
+        try {
+          const payload = verifyAuthToken(token);
+          const user = await db.query.users.findFirst({
+            where: eq(users.id, payload.sub),
+          });
+          userId = user?.id;
+        } catch {
+          // Token invalid, continue without user
+        }
+      }
+    }
+
     const rows = await db
       .select({
         id: posts.id,
@@ -65,8 +110,12 @@ export async function GET() {
       .innerJoin(users, eq(posts.userId, users.id))
       .orderBy(desc(posts.createdAt));
 
+    const mappedPosts = await Promise.all(
+      rows.map(row => mapPost(row, userId))
+    );
+
     return NextResponse.json({
-      posts: rows.map(mapPost),
+      posts: mappedPosts,
     });
   } catch (error) {
     console.error("Failed to load posts", error);
@@ -118,17 +167,19 @@ export async function POST(request: NextRequest) {
 
     const createdAt = createdPost.createdAt ?? new Date();
 
+    const mappedPost = await mapPost({
+      id: createdPost.id,
+      content: createdPost.content,
+      imageUrl: createdPost.imageUrl,
+      createdAt,
+      authorId: user.id,
+      authorFirstName: user.firstName,
+      authorLastName: user.lastName,
+    }, user.id);
+
     return NextResponse.json(
       {
-        post: mapPost({
-          id: createdPost.id,
-          content: createdPost.content,
-          imageUrl: createdPost.imageUrl,
-          createdAt,
-          authorId: user.id,
-          authorFirstName: user.firstName,
-          authorLastName: user.lastName,
-        }),
+        post: mappedPost,
       },
       { status: 201 },
     );
