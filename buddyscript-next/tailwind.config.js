@@ -14,7 +14,7 @@ module.exports = {
         "accent-foreground": "var(--accent-foreground)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "Arial", "Helvetica", "sans-serif"],
+        sans: ["var(--font-poppins)", "Arial", "Helvetica", "sans-serif"],
       },
     },
   },

@@ -1,7 +1,8 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { useRegister } from "@/hooks/useRegister";
 import { registerSchema } from "@/lib/validators/auth";
@@ -23,20 +24,9 @@ export default function RegisterPage() {
   const [clientErrors, setClientErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
+  const [statusMessage, setStatusMessage] = useState<string>("");
   const router = useRouter();
-  const { mutateAsync, isPending, isSuccess, error } = useRegister();
-
-  const statusMessage = useMemo(() => {
-    if (isSuccess) {
-      return "Registration successful! Redirecting to login...";
-    }
-
-    if (error?.message) {
-      return error.message;
-    }
-
-    return "";
-  }, [error, isSuccess]);
+  const { mutateAsync, isPending } = useRegister();
 
   const handleInputChange =
     (field: keyof FormState) =>
@@ -96,16 +86,31 @@ export default function RegisterPage() {
 
     if (!parsed.success || registerValues.password !== confirmPassword) {
       setClientErrors(nextErrors);
+      if (Object.keys(nextErrors).length > 0) {
+        const validationMessage = "Please fix the highlighted fields and try again.";
+        setStatusMessage(validationMessage);
+        toast.error(validationMessage);
+      }
       return;
     }
+
+    setStatusMessage("");
 
     try {
       await mutateAsync(parsed.data);
       setValues(initialState);
       setClientErrors({});
+      const successMessage = "Registration successful! Redirecting to login...";
+      setStatusMessage(successMessage);
+      toast.success(successMessage);
       router.push("/login");
-    } catch {
-      // errors handled via mutation state
+    } catch (mutationError) {
+      const fallbackMessage =
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Unable to register";
+      setStatusMessage(fallbackMessage);
+      toast.error(fallbackMessage);
     }
   };
 
