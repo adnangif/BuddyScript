@@ -14,4 +14,25 @@ export type AuthErrorResponse = {
   errors?: Record<string, string[]>;
 };
 
+export type PostAuthor = {
+  id: string;
+  firstName: string;
+  lastName: string;
+};
+
+export type FeedPost = {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: PostAuthor;
+};
+
+export type PostsQueryResponse = {
+  posts: FeedPost[];
+};
+
+export type CreatePostResponse = {
+  post: FeedPost;
+};
+
 

@@ -1,60 +1,19 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
+import { useCreatePost } from "@/hooks/useCreatePost";
+import { FeedPost } from "@/hooks/types";
+import { usePosts } from "@/hooks/usePosts";
 import { useAuthStore } from "@/stores/auth-store";
-
-type FeedPost = {
-  id: string;
-  authorName: string;
-  authorHandle: string;
-  content: string;
-  createdAt: string;
-};
-
-const MOCK_POSTS: FeedPost[] = [
-  {
-    id: "post-01",
-    authorName: "Amelia Watts",
-    authorHandle: "amelia",
-    content:
-      "Landed a first client for my studio. Documenting every step so others can replicate it!",
-    createdAt: "2025-11-23T08:40:00.000Z",
-  },
-  {
-    id: "post-02",
-    authorName: "Noah Patel",
-    authorHandle: "noah.codes",
-    content:
-      "Migrated our cron jobs to a single queue worker. Latency dropped 45% overnight.",
-    createdAt: "2025-11-22T19:10:00.000Z",
-  },
-  {
-    id: "post-03",
-    authorName: "Lena Cho",
-    authorHandle: "lenacho",
-    content:
-      "Does anyone have a solid checklist for accessibility regression testing? Sharing mine soon.",
-    createdAt: "2025-11-23T11:05:00.000Z",
-  },
-  {
-    id: "post-04",
-    authorName: "Marco Esquivel",
-    authorHandle: "maker-marco",
-    content:
-      "Sunday build log: shipping keyboard shortcuts across the dashboard. Beta testers welcome!",
-    createdAt: "2025-11-21T16:00:00.000Z",
-  },
-  {
-    id: "post-05",
-    authorName: "Priya Narayanan",
-    authorHandle: "priya.designs",
-    content:
-      "Put together a Figma kit with real-world data states. DM if you want the preview link.",
-    createdAt: "2025-11-22T05:55:00.000Z",
-  },
-];
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
@@ -64,10 +23,72 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 const formatTimestamp = (isoString: string) =>
   dateFormatter.format(new Date(isoString));
 
+const exploreLinks = [
+  { label: "Learning", href: "#0", badge: "New" },
+  { label: "Insights", href: "#0" },
+  { label: "Find friends", href: "find-friends.html" },
+  { label: "Bookmarks", href: "#0" },
+  { label: "Group", href: "group.html" },
+  { label: "Gaming", href: "#0", badge: "New" },
+  { label: "Settings", href: "#0" },
+  { label: "Save post", href: "#0" },
+];
+
+const suggestedPeople = [
+  {
+    id: "steve",
+    name: "Steve Jobs",
+    subtitle: "CEO of Apple",
+    avatar: "/icons/people1.png",
+  },
+  {
+    id: "ryan",
+    name: "Ryan Roslansky",
+    subtitle: "CEO of Linkedin",
+    avatar: "/icons/people2.png",
+  },
+  {
+    id: "dylan",
+    name: "Dylan Field",
+    subtitle: "CEO of Figma",
+    avatar: "/icons/people3.png",
+  },
+];
+
+const friendActivity = [
+  {
+    id: "friend-1",
+    name: "Steve Jobs",
+    subtitle: "CEO of Apple",
+    avatar: "/icons/people1.png",
+    meta: "5 minutes ago",
+  },
+  {
+    id: "friend-2",
+    name: "Ryan Roslansky",
+    subtitle: "CEO of Linkedin",
+    avatar: "/icons/people2.png",
+    meta: "Online",
+  },
+  {
+    id: "friend-3",
+    name: "Dylan Field",
+    subtitle: "CEO of Figma",
+    avatar: "/icons/people3.png",
+    meta: "Online",
+  },
+];
+
 export default function FeedsPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const [content, setContent] = useState("");
+  const { data, isLoading, isFetching, refetch } = usePosts();
+  const {
+    mutateAsync: createPost,
+    isPending: isPublishing,
+  } = useCreatePost();
 
   useEffect(() => {
     if (hasHydrated && !user) {
@@ -76,12 +97,15 @@ export default function FeedsPage() {
   }, [hasHydrated, router, user]);
 
   const orderedPosts = useMemo<FeedPost[]>(() => {
-    return [...MOCK_POSTS].sort(
+    if (!data?.posts) {
+      return [];
+    }
+    return [...data.posts].sort(
       (postA, postB) =>
         new Date(postB.createdAt).getTime() -
         new Date(postA.createdAt).getTime(),
     );
-  }, []);
+  }, [data?.posts]);
 
   if (!hasHydrated) {
     return (
@@ -105,32 +129,327 @@ export default function FeedsPage() {
     );
   }
 
-  return (
-    <main className="feed-page">
-      <header className="feed-card feed-header">
-        <div>
-          <p className="feed-user-label">Signed in as</p>
-          <p className="feed-user-email">{user.email}</p>
-        </div>
-        <p className="feed-description">
-          Everyone can read every update. Posts are ordered from newest to oldest.
-        </p>
-      </header>
+  const handleContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(event.target.value);
+  };
 
-      <section className="feed-list" aria-live="polite">
-        {orderedPosts.map((post) => (
-          <article key={post.id} className="feed-card">
-            <div className="feed-card-meta">
-              <div>
-                <p className="feed-card-author">{post.authorName}</p>
-                <span className="feed-card-handle">@{post.authorHandle}</span>
-              </div>
-              <time dateTime={post.createdAt}>{formatTimestamp(post.createdAt)}</time>
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = content.trim();
+
+    if (!trimmed) {
+      toast.error("Share something with your network first.");
+      return;
+    }
+
+    try {
+      await createPost({ content: trimmed });
+      setContent("");
+      toast.success("Post published!");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to publish post.",
+      );
+    }
+  };
+
+  return (
+    <main className="_layout _layout_main_wrapper">
+      <div className="_main_layout">
+        <nav className="navbar navbar-expand-lg navbar-light _header_nav _padd_t10">
+          <div className="container _custom_container">
+            <div className="_logo_wrap">
+              <a className="navbar-brand" href="feed.html">
+                <img src="/icons/logo.svg" alt="BuddyScript" className="_nav_logo" />
+              </a>
             </div>
-            <p>{post.content}</p>
-          </article>
-        ))}
-      </section>
+            <div className="collapse navbar-collapse show">
+              <div className="_header_form ms-auto">
+                <form className="_header_form_grp" role="search">
+                  <svg
+                    className="_header_form_svg"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="17"
+                    height="17"
+                    fill="none"
+                    viewBox="0 0 17 17"
+                  >
+                    <circle cx="7" cy="7" r="6" stroke="#666" />
+                    <path stroke="#666" strokeLinecap="round" d="M16 16l-3-3" />
+                  </svg>
+                  <input
+                    className="form-control me-2 _inpt1"
+                    type="search"
+                    placeholder="Search the feed"
+                    aria-label="Search posts"
+                  />
+                </form>
+              </div>
+              <div className="_header_nav_profile">
+                <div className="_header_nav_profile_image">
+                  <img
+                    src="/icons/profile.png"
+                    alt="Profile"
+                    className="_nav_profile_img"
+                  />
+                </div>
+                <div className="_header_nav_dropdown">
+                  <p className="_header_nav_para">
+                    {user.firstName} {user.lastName}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div className="container _custom_container">
+          <div className="_layout_inner_wrap">
+            <div className="row">
+              <div className="col-xl-3 col-lg-3 col-md-12 col-sm-12">
+                <aside className="_layout_left_sidebar_wrap">
+                  <div className="_layout_left_sidebar_inner">
+                    <div className="_left_inner_area_explore _padd_t24 _padd_b6 _padd_r24 _padd_l24 _b_radious6 _feed_inner_area">
+                      <h4 className="_left_inner_area_explore_title _title5 _mar_b24">
+                        Explore
+                      </h4>
+                      <ul className="_left_inner_area_explore_list">
+                        {exploreLinks.map((link) => (
+                          <li
+                            key={link.label}
+                            className="_left_inner_area_explore_item _explore_item"
+                          >
+                            <a href={link.href} className="_left_inner_area_explore_link">
+                              {link.label}
+                            </a>
+                            {link.badge ? (
+                              <span className="_left_inner_area_explore_link_txt">
+                                {link.badge}
+                              </span>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="_layout_left_sidebar_inner">
+                    <div className="_left_inner_area_suggest _padd_t24 _padd_b6 _padd_r24 _padd_l24 _b_radious6 _feed_inner_area">
+                      <div className="_left_inner_area_suggest_content _mar_b24">
+                        <h4 className="_left_inner_area_suggest_content_title _title5">
+                          Suggested People
+                        </h4>
+                        <span className="_left_inner_area_suggest_content_txt">
+                          <a className="_left_inner_area_suggest_content_txt_link" href="#0">
+                            See All
+                          </a>
+                        </span>
+                      </div>
+                      {suggestedPeople.map((person) => (
+                        <div key={person.id} className="_left_inner_area_suggest_info">
+                          <div className="_left_inner_area_suggest_info_box">
+                            <div className="_left_inner_area_suggest_info_image">
+                              <a href="profile.html">
+                                <img
+                                  src={person.avatar}
+                                  alt={person.name}
+                                  className="_info_img"
+                                />
+                              </a>
+                            </div>
+                            <div className="_left_inner_area_suggest_info_txt">
+                              <a href="profile.html">
+                                <h4 className="_left_inner_area_suggest_info_title">
+                                  {person.name}
+                                </h4>
+                              </a>
+                              <p className="_left_inner_area_suggest_info_para">
+                                {person.subtitle}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="_left_inner_area_suggest_info_link">
+                            <a href="#0" className="_info_link">
+                              Connect
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </aside>
+              </div>
+
+              <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <section className="_layout_middle_wrap">
+                  <div className="_feed_inner_text_area _b_radious6 _padd_b24 _padd_t24 _padd_r24 _padd_l24 _mar_b16">
+                    <div className="_feed_inner_text_area_box">
+                      <div className="_feed_inner_text_area_box_image">
+                        <img src="/icons/txt_img.png" alt="Profile" className="_txt_img" />
+                      </div>
+                      <form
+                        className="form-floating _feed_inner_text_area_box_form"
+                        onSubmit={handleSubmit}
+                      >
+                        <textarea
+                          className="form-control _textarea"
+                          placeholder="Leave a comment here"
+                          id="feed-post-textarea"
+                          value={content}
+                          onChange={handleContentChange}
+                          maxLength={500}
+                          disabled={isPublishing}
+                        />
+                        <label className="_feed_textarea_label" htmlFor="feed-post-textarea">
+                          Write something ...
+                        </label>
+                        <div className="_feed_inner_text_area_btn">
+                          <button
+                            type="submit"
+                            className="_feed_inner_text_area_btn_link"
+                            disabled={isPublishing}
+                          >
+                            <svg
+                              className="_mar_img"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="13"
+                              fill="none"
+                              viewBox="0 0 14 13"
+                            >
+                              <path
+                                fill="#fff"
+                                fillRule="evenodd"
+                                d="M6.37 7.879l2.438 3.955a.335.335 0 00.34.162c.068-.01.23-.05.289-.247l3.049-10.297a.348.348 0 00-.09-.35.341.341 0 00-.34-.088L1.75 4.03a.34.34 0 00-.247.289.343.343 0 00.16.347L5.666 7.17 9.2 3.597a.5.5 0 01.712.703L6.37 7.88zM9.097 13c-.464 0-.89-.236-1.14-.641L5.372 8.165l-4.237-2.65a1.336 1.336 0 01-.622-1.331c.074-.536.441-.96.957-1.112L11.774.054a1.347 1.347 0 011.67 1.682l-3.05 10.296A1.332 1.332 0 019.098 13z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span>{isPublishing ? "Posting..." : "Post"}</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+
+                  <div aria-live="polite">
+                    {isLoading || isFetching ? (
+                      <article className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16">
+                        <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
+                          <p className="_feed_inner_timeline_post_title">Loading posts…</p>
+                          <p className="_feed_inner_timeline_post_box_para">
+                            Fetching the latest updates from your network.
+                          </p>
+                        </div>
+                      </article>
+                    ) : null}
+
+                    {!isLoading && orderedPosts.length === 0 ? (
+                      <article className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16">
+                        <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
+                          <p className="_feed_inner_timeline_post_title">
+                            No updates yet
+                          </p>
+                          <p className="_feed_inner_timeline_post_box_para">
+                            Break the ice with your first post!
+                          </p>
+                          <button
+                            type="button"
+                            className="_info_link"
+                            onClick={() => refetch()}
+                          >
+                            Refresh feed
+                          </button>
+                        </div>
+                      </article>
+                    ) : null}
+
+                    {orderedPosts.map((post) => (
+                      <article
+                        key={post.id}
+                        className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16"
+                      >
+                        <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
+                          <div className="_feed_inner_timeline_post_top">
+                            <div className="_feed_inner_timeline_post_box">
+                              <div className="_feed_inner_timeline_post_box_image">
+                                <img
+                                  src="/icons/post_img.png"
+                                  alt={post.author.firstName}
+                                  className="_post_img"
+                                />
+                              </div>
+                              <div className="_feed_inner_timeline_post_box_txt">
+                                <h4 className="_feed_inner_timeline_post_box_title">
+                                  {post.author.firstName} {post.author.lastName}
+                                </h4>
+                                <p className="_feed_inner_timeline_post_box_para">
+                                  {formatTimestamp(post.createdAt)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="_feed_inner_timeline_post_title">{post.content}</p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+              <div className="col-xl-3 col-lg-3 col-md-12 col-sm-12">
+                <aside className="_layout_right_sidebar_wrap">
+                  <div className="_layout_right_sidebar_inner">
+                    <div className="_right_inner_area_info _padd_t24 _padd_b24 _padd_r24 _padd_l24 _b_radious6 _feed_inner_area">
+                      <div className="_right_inner_area_info_content _mar_b24">
+                        <h4 className="_right_inner_area_info_content_title _title5">
+                          You Might Like
+                        </h4>
+                        <span className="_right_inner_area_info_content_txt">
+                          <a
+                            className="_right_inner_area_info_content_txt_link"
+                            href="#0"
+                          >
+                            See All
+                          </a>
+                        </span>
+                      </div>
+                      <hr className="_underline" />
+                      {friendActivity.map((friend) => (
+                        <div key={friend.id} className="_feed_right_inner_area_card_ppl">
+                          <div className="_feed_right_inner_area_card_ppl_box">
+                            <div className="_feed_right_inner_area_card_ppl_image">
+                              <a href="profile.html">
+                                <img
+                                  src={friend.avatar}
+                                  alt={friend.name}
+                                  className="_box_ppl_img"
+                                />
+                              </a>
+                            </div>
+                            <div className="_feed_right_inner_area_card_ppl_txt">
+                              <a href="profile.html">
+                                <h4 className="_feed_right_inner_area_card_ppl_title">
+                                  {friend.name}
+                                </h4>
+                              </a>
+                              <p className="_feed_right_inner_area_card_ppl_para">
+                                {friend.subtitle}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="_feed_right_inner_area_card_ppl_side">
+                            <span>{friend.meta}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
