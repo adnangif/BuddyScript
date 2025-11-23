@@ -21,10 +21,11 @@ const fetchPosts = async (token?: string): Promise<PostsQueryResponse> => {
 };
 
 export const usePosts = () => {
-  const token = useAuthStore((state) => state.user?.token);
+  const user = useAuthStore((state) => state.user);
+  const token = user?.token;
 
   return useQuery({
-    queryKey: ["posts"],
+    queryKey: ["posts", user?.id],
     queryFn: () => fetchPosts(token),
   });
 };

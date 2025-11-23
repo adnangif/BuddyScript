@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { LikeResponse, CommentsQueryResponse } from "./types";
 
-export const useLikeComment = (commentId: string, postId: string) => {
+export const useLikeComment = (commentId: string, postId: string, parentCommentId?: string) => {
     const token = useAuthStore((state) => state.user?.token);
     const queryClient = useQueryClient();
 
@@ -27,13 +27,30 @@ export const useLikeComment = (commentId: string, postId: string) => {
             return response.json();
         },
         onMutate: async () => {
-            // Cancel any outgoing refetches
+            // If this is a reply (has parentCommentId), update the replies cache
+            if (parentCommentId) {
+                await queryClient.cancelQueries({ queryKey: ["replies", parentCommentId] });
+                
+                const previousReplies = queryClient.getQueryData<CommentsQueryResponse>(["replies", parentCommentId]);
+                
+                if (previousReplies) {
+                    queryClient.setQueryData<CommentsQueryResponse>(["replies", parentCommentId], {
+                        comments: previousReplies.comments.map(comment =>
+                            comment.id === commentId
+                                ? { ...comment, hasUserLiked: true, likeCount: (comment.likeCount ?? 0) + 1 }
+                                : comment
+                        ),
+                    });
+                }
+                
+                return { previousReplies };
+            }
+            
+            // Otherwise, update the top-level comments cache
             await queryClient.cancelQueries({ queryKey: ["comments", postId] });
-
-            // Snapshot the previous value
+            
             const previousComments = queryClient.getQueryData<CommentsQueryResponse>(["comments", postId]);
-
-            // Optimistically update the cache
+            
             if (previousComments) {
                 queryClient.setQueryData<CommentsQueryResponse>(["comments", postId], {
                     comments: previousComments.comments.map(comment =>
@@ -43,23 +60,28 @@ export const useLikeComment = (commentId: string, postId: string) => {
                     ),
                 });
             }
-
+            
             return { previousComments };
         },
         onError: (err, variables, context) => {
             // Rollback on error
-            if (context?.previousComments) {
+            if (parentCommentId && context?.previousReplies) {
+                queryClient.setQueryData(["replies", parentCommentId], context.previousReplies);
+            } else if (context?.previousComments) {
                 queryClient.setQueryData(["comments", postId], context.previousComments);
             }
         },
         onSettled: () => {
-            // Always refetch after error or success
+            // Invalidate all related queries
+            if (parentCommentId) {
+                queryClient.invalidateQueries({ queryKey: ["replies", parentCommentId] });
+            }
             queryClient.invalidateQueries({ queryKey: ["comments", postId] });
         },
     });
 };
 
-export const useUnlikeComment = (commentId: string, postId: string) => {
+export const useUnlikeComment = (commentId: string, postId: string, parentCommentId?: string) => {
     const token = useAuthStore((state) => state.user?.token);
     const queryClient = useQueryClient();
 
@@ -84,13 +106,30 @@ export const useUnlikeComment = (commentId: string, postId: string) => {
             return response.json();
         },
         onMutate: async () => {
-            // Cancel any outgoing refetches
+            // If this is a reply (has parentCommentId), update the replies cache
+            if (parentCommentId) {
+                await queryClient.cancelQueries({ queryKey: ["replies", parentCommentId] });
+                
+                const previousReplies = queryClient.getQueryData<CommentsQueryResponse>(["replies", parentCommentId]);
+                
+                if (previousReplies) {
+                    queryClient.setQueryData<CommentsQueryResponse>(["replies", parentCommentId], {
+                        comments: previousReplies.comments.map(comment =>
+                            comment.id === commentId
+                                ? { ...comment, hasUserLiked: false, likeCount: Math.max(0, (comment.likeCount ?? 0) - 1) }
+                                : comment
+                        ),
+                    });
+                }
+                
+                return { previousReplies };
+            }
+            
+            // Otherwise, update the top-level comments cache
             await queryClient.cancelQueries({ queryKey: ["comments", postId] });
-
-            // Snapshot the previous value
+            
             const previousComments = queryClient.getQueryData<CommentsQueryResponse>(["comments", postId]);
-
-            // Optimistically update the cache
+            
             if (previousComments) {
                 queryClient.setQueryData<CommentsQueryResponse>(["comments", postId], {
                     comments: previousComments.comments.map(comment =>
@@ -100,17 +139,22 @@ export const useUnlikeComment = (commentId: string, postId: string) => {
                     ),
                 });
             }
-
+            
             return { previousComments };
         },
         onError: (err, variables, context) => {
             // Rollback on error
-            if (context?.previousComments) {
+            if (parentCommentId && context?.previousReplies) {
+                queryClient.setQueryData(["replies", parentCommentId], context.previousReplies);
+            } else if (context?.previousComments) {
                 queryClient.setQueryData(["comments", postId], context.previousComments);
             }
         },
         onSettled: () => {
-            // Always refetch after error or success
+            // Invalidate all related queries
+            if (parentCommentId) {
+                queryClient.invalidateQueries({ queryKey: ["replies", parentCommentId] });
+            }
             queryClient.invalidateQueries({ queryKey: ["comments", postId] });
         },
     });

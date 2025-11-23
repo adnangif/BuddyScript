@@ -28,11 +28,13 @@ export default function Comment({ comment, postId, depth = 0 }: CommentProps) {
 
     const { mutate: likeComment, isPending: isLiking } = useLikeComment(
         comment.id,
-        postId
+        postId,
+        comment.parentCommentId ?? undefined
     );
     const { mutate: unlikeComment, isPending: isUnliking } = useUnlikeComment(
         comment.id,
-        postId
+        postId,
+        comment.parentCommentId ?? undefined
     );
     const { mutate: createReply, isPending: isReplying } = useCreateComment(postId);
     const {
