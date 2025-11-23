@@ -1,11 +1,13 @@
+"use client";
+
 import { useMutation } from "@tanstack/react-query";
 
-import { RegisterInput } from "@/lib/validators/auth";
+import { LoginInput } from "@/lib/validators/auth";
 import { AuthErrorResponse, AuthMutationResponse } from "@/hooks/types";
 import { useAuthStore } from "@/stores/auth-store";
 
-const registerRequest = async (payload: RegisterInput) => {
-  const response = await fetch("/api/auth/register", {
+const loginRequest = async (payload: LoginInput) => {
+  const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -20,18 +22,18 @@ const registerRequest = async (payload: RegisterInput) => {
     const message =
       errorBody.message ??
       Object.values(errorBody.errors ?? {})?.[0]?.[0] ??
-      "Unable to register";
+      "Unable to login";
     throw new Error(message);
   }
 
   return (await response.json()) as AuthMutationResponse;
 };
 
-export const useRegister = () => {
+export const useLogin = () => {
   const setUser = useAuthStore((state) => state.setUser);
 
   return useMutation({
-    mutationFn: registerRequest,
+    mutationFn: loginRequest,
     onSuccess: (data) => {
       setUser({
         ...data.user,
@@ -41,4 +43,5 @@ export const useRegister = () => {
     },
   });
 };
+
 
