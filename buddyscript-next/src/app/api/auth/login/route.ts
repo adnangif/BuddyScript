@@ -65,6 +65,8 @@ export async function POST(request: Request) {
         user: {
           id: existingUser.id,
           email: existingUser.email,
+          firstName: existingUser.firstName,
+          lastName: existingUser.lastName,
         },
         token,
         expiresInSeconds: 3600,

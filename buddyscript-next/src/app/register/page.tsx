@@ -8,12 +8,16 @@ import { useRegister } from "@/hooks/useRegister";
 import { registerSchema } from "@/lib/validators/auth";
 
 type FormState = {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   confirmPassword: string;
 };
 
 const initialState: FormState = {
+  firstName: "",
+  lastName: "",
   email: "",
   password: "",
   confirmPassword: "",
@@ -178,6 +182,54 @@ export default function RegisterPage() {
                   noValidate
                   onSubmit={handleSubmit}
                 >
+                  <div className="row">
+                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                      <div className="_social_registration_form_input _mar_b14">
+                        <label
+                          className="_social_registration_label _mar_b8"
+                          htmlFor="registration-first-name"
+                        >
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          id="registration-first-name"
+                          name="firstName"
+                          className="form-control _social_registration_input"
+                          value={values.firstName}
+                          onChange={handleInputChange("firstName")}
+                          aria-invalid={Boolean(clientErrors.firstName)}
+                          aria-describedby={getErrorId("firstName")}
+                          autoComplete="given-name"
+                          required
+                        />
+                        {renderError("firstName")}
+                      </div>
+                    </div>
+                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                      <div className="_social_registration_form_input _mar_b14">
+                        <label
+                          className="_social_registration_label _mar_b8"
+                          htmlFor="registration-last-name"
+                        >
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          id="registration-last-name"
+                          name="lastName"
+                          className="form-control _social_registration_input"
+                          value={values.lastName}
+                          onChange={handleInputChange("lastName")}
+                          aria-invalid={Boolean(clientErrors.lastName)}
+                          aria-describedby={getErrorId("lastName")}
+                          autoComplete="family-name"
+                          required
+                        />
+                        {renderError("lastName")}
+                      </div>
+                    </div>
+                  </div>
                   <div className="row">
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                       <div className="_social_registration_form_input _mar_b14">

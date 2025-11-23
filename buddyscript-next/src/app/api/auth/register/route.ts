@@ -9,7 +9,6 @@ import { signAuthToken } from "@/lib/jwt";
 export async function POST(request: Request) {
   let rawBody: unknown;
   try {
-    console.log(rawBody)
     rawBody = await request.json();
   } catch {
     return NextResponse.json(
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, password } = result.data;
+  const { email, password, firstName, lastName } = result.data;
 
   try {
     const existingUser = await db.query.users.findFirst({
@@ -49,6 +48,8 @@ export async function POST(request: Request) {
       .values({
         email: email.toLowerCase(),
         passwordHash,
+        firstName,
+        lastName,
       })
       .returning();
 
@@ -62,6 +63,8 @@ export async function POST(request: Request) {
         user: {
           id: createdUser.id,
           email: createdUser.email,
+          firstName: createdUser.firstName,
+          lastName: createdUser.lastName,
         },
         token,
         expiresInSeconds: 3600,

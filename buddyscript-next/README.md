@@ -46,6 +46,17 @@ The dev server runs at `http://localhost:3000`. Registration lives at `/register
 
 Validation runs on both client (zod) and server. Duplicate emails are rejected with a helpful message. API errors bubble back into the UI via React Query.
 
+### Registration payload example
+
+```json
+{
+  "firstName": "Avery",
+  "lastName": "Lee",
+  "email": "avery@example.com",
+  "password": "P@ssw0rd!"
+}
+```
+
 ## Project scripts
 
 | Command          | Purpose                                  |
