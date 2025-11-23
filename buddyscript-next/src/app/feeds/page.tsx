@@ -90,12 +90,12 @@ function PostCard({ post }: { post: FeedPost }) {
   const [showComments, setShowComments] = useState(false);
   const [commentContent, setCommentContent] = useState("");
   const user = useAuthStore((state) => state.user);
-  
+
   const { mutate: likePost, isPending: isLiking } = useLikePost(post.id);
   const { mutate: unlikePost, isPending: isUnliking } = useUnlikePost(post.id);
   const { mutate: createComment, isPending: isCommenting } = useCreateComment(post.id);
   const { data: commentsData, isLoading: isLoadingComments } = usePostComments(post.id);
-  
+
   const isOwnPost = user?.id === post.author.id;
 
   const handleLikeToggle = () => {
@@ -211,7 +211,7 @@ function PostCard({ post }: { post: FeedPost }) {
               opacity: isLiking || isUnliking ? 0.6 : 1,
             }}
           >
-            <span style={{ 
+            <span style={{
               fontSize: "20px",
               transition: "transform 0.2s ease",
               display: "inline-block",
@@ -526,9 +526,9 @@ export default function FeedsPage() {
                           <div className="_left_inner_area_suggest_info_box">
                             <div className="_left_inner_area_suggest_info_image">
                               <a href="profile.html">
-								<div className="_info_img">
-									P
-								</div>
+                                <div className="_info_img">
+                                  {person.name[0]}
+                                </div>
                               </a>
                             </div>
                             <div className="_left_inner_area_suggest_info_txt">
@@ -567,17 +567,18 @@ export default function FeedsPage() {
                       >
                         <textarea
                           className="form-control _textarea"
-                          placeholder="Leave a comment here"
+                          placeholder=" "
                           id="feed-post-textarea"
                           value={content}
                           onChange={handleContentChange}
                           maxLength={500}
                           disabled={isPublishing || isUploadingImage}
                         />
-                        <label className="_feed_textarea_label" htmlFor="feed-post-textarea">
+                        {content.trim() === "" && <label className="_feed_textarea_label" htmlFor="feed-post-textarea">
                           Write something ...
                         </label>
-                        
+                        }
+
                         {/* Image Preview */}
                         {imagePreview && (
                           <div style={{ marginTop: "12px", position: "relative" }}>
@@ -707,8 +708,8 @@ export default function FeedsPage() {
                               {isUploadingImage
                                 ? "Uploading..."
                                 : isPublishing
-                                ? "Posting..."
-                                : "Post"}
+                                  ? "Posting..."
+                                  : "Post"}
                             </span>
                           </button>
                         </div>
