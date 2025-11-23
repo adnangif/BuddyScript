@@ -56,6 +56,11 @@ Design for high read/write volume:
    - Port the static HTML/CSS into reusable components.
    - Configure routing for `/login`, `/register`, and `/feed`.
 
+### Phase 1 status
+
+- The new Next.js codebase lives in `buddyscript-next/`. Follow that README for setup, env vars, and the registration walkthrough.
+- Legacy static assets remain under `design-system/` for reference and are now piped into the Next.js app (global CSS + icons).
+
 2. **Implement Auth**
    - Build register/login forms with validation.
    - Wire up backend endpoints.
