@@ -12,14 +12,19 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import Navbar from "@/components/Navbar";
-import Comment from "@/components/Comment";
 import { useCreatePost } from "@/hooks/useCreatePost";
 import { FeedPost } from "@/hooks/types";
 import { usePosts } from "@/hooks/usePosts";
 import { useAuthStore } from "@/stores/auth-store";
 import { uploadImage } from "@/lib/upload-image";
-import { useLikePost, useUnlikePost } from "@/hooks/useLikes";
-import { usePostComments, useCreateComment } from "@/hooks/useComments";
+import {
+  Button,
+  Textarea,
+  PostCard,
+  SuggestedPersonCard,
+  FriendActivityCard,
+  SidebarSection,
+} from "@/app/ui/atomic";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
@@ -84,221 +89,6 @@ const friendActivity = [
     meta: "Online",
   },
 ];
-
-// PostCard component to handle individual post display with likes and comments
-function PostCard({ post }: { post: FeedPost }) {
-  const [showComments, setShowComments] = useState(false);
-  const [commentContent, setCommentContent] = useState("");
-  const user = useAuthStore((state) => state.user);
-
-  const { mutate: likePost, isPending: isLiking } = useLikePost(post.id);
-  const { mutate: unlikePost, isPending: isUnliking } = useUnlikePost(post.id);
-  const { mutate: createComment, isPending: isCommenting } = useCreateComment(post.id);
-  const { data: commentsData, isLoading: isLoadingComments } = usePostComments(post.id);
-
-  const isOwnPost = user?.id === post.author.id;
-
-  const handleLikeToggle = () => {
-    if (isLiking || isUnliking) return;
-
-    if (post.hasUserLiked) {
-      unlikePost(undefined, {
-        onError: (error) => {
-          toast.error(error.message || "Failed to unlike post");
-        },
-      });
-    } else {
-      likePost(undefined, {
-        onError: (error) => {
-          toast.error(error.message || "Failed to like post");
-        },
-      });
-    }
-  };
-
-  const handleCommentSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const trimmed = commentContent.trim();
-
-    if (!trimmed) {
-      toast.error("Comment cannot be empty");
-      return;
-    }
-
-    createComment(
-      { content: trimmed, parentCommentId: null },
-      {
-        onSuccess: () => {
-          setCommentContent("");
-          toast.success("Comment posted!");
-        },
-        onError: (error) => {
-          toast.error(error.message || "Failed to post comment");
-        },
-      }
-    );
-  };
-
-  return (
-    <article className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16">
-      <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
-        <div className="_feed_inner_timeline_post_top">
-          <div className="_feed_inner_timeline_post_box">
-            <div className="_feed_inner_timeline_post_box_image">
-              <img
-                src="/icons/post_img.png"
-                alt={post.author.firstName}
-                className="_post_img"
-              />
-            </div>
-            <div className="_feed_inner_timeline_post_box_txt">
-              <h4 className="_feed_inner_timeline_post_box_title">
-                {post.author.firstName} {post.author.lastName}
-                {!post.isPublic && isOwnPost && (
-                  <span
-                    style={{
-                      marginLeft: "8px",
-                      fontSize: "12px",
-                      padding: "2px 8px",
-                      background: "#f0f0f0",
-                      borderRadius: "4px",
-                      color: "#666",
-                      fontWeight: "normal",
-                    }}
-                  >
-                    🔒 Private
-                  </span>
-                )}
-              </h4>
-              <p className="_feed_inner_timeline_post_box_para">
-                {formatTimestamp(post.createdAt)}
-              </p>
-            </div>
-          </div>
-        </div>
-        <p className="_feed_inner_timeline_post_title">{post.content}</p>
-        {post.imageUrl && (
-          <div style={{ marginTop: "16px" }}>
-            <img
-              src={post.imageUrl}
-              alt="Post attachment"
-              style={{
-                maxWidth: "100%",
-                borderRadius: "8px",
-                display: "block",
-              }}
-            />
-          </div>
-        )}
-
-        {/* Like and Comment Actions */}
-        <div style={{ display: "flex", gap: "24px", marginTop: "16px", paddingTop: "12px", borderTop: "1px solid #e0e0e0" }}>
-          <button
-            type="button"
-            onClick={handleLikeToggle}
-            disabled={isLiking || isUnliking}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: isLiking || isUnliking ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "14px",
-              color: post.hasUserLiked ? "#dc2626" : "#666",
-              fontWeight: post.hasUserLiked ? "600" : "normal",
-              transition: "all 0.2s ease",
-              opacity: isLiking || isUnliking ? 0.6 : 1,
-            }}
-          >
-            <span style={{
-              fontSize: "20px",
-              transition: "transform 0.2s ease",
-              display: "inline-block",
-              transform: post.hasUserLiked ? "scale(1.1)" : "scale(1)",
-            }}>
-              {post.hasUserLiked ? "❤️" : "🤍"}
-            </span>
-            <span>{post.likeCount ?? 0} {post.likeCount === 1 ? "Like" : "Likes"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowComments(!showComments)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "14px",
-              color: showComments ? "#0066cc" : "#666",
-              fontWeight: showComments ? "600" : "normal",
-            }}
-          >
-            <span style={{ fontSize: "18px" }}>💬</span>
-            <span>{post.commentCount ?? 0} {post.commentCount === 1 ? "Comment" : "Comments"}</span>
-          </button>
-        </div>
-
-        {/* Comments Section */}
-        {showComments && (
-          <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #e0e0e0" }}>
-            {/* Comment Form */}
-            <form onSubmit={handleCommentSubmit} style={{ marginBottom: "16px" }}>
-              <textarea
-                value={commentContent}
-                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setCommentContent(e.target.value)}
-                placeholder="Write a comment..."
-                maxLength={1000}
-                disabled={isCommenting}
-                style={{
-                  width: "100%",
-                  minHeight: "80px",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "1px solid #ddd",
-                  fontSize: "14px",
-                  resize: "vertical",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={isCommenting}
-                style={{
-                  marginTop: "8px",
-                  padding: "8px 20px",
-                  background: "#0066cc",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                }}
-              >
-                {isCommenting ? "Posting..." : "Post Comment"}
-              </button>
-            </form>
-
-            {/* Comments List */}
-            {isLoadingComments ? (
-              <p style={{ fontSize: "14px", color: "#666" }}>Loading comments...</p>
-            ) : commentsData?.comments && commentsData.comments.length > 0 ? (
-              <div>
-                {commentsData.comments.map((comment) => (
-                  <Comment key={comment.id} comment={comment} postId={post.id} />
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontSize: "14px", color: "#666" }}>No comments yet. Be the first to comment!</p>
-            )}
-          </div>
-        )}
-      </div>
-    </article>
-  );
-}
 
 export default function FeedsPage() {
   const router = useRouter();
@@ -509,48 +299,25 @@ export default function FeedsPage() {
                     </div>
                   </div>
 
-                  <div className="_layout_left_sidebar_inner">
-                    <div className="_left_inner_area_suggest _padd_t24 _padd_b6 _padd_r24 _padd_l24 _b_radious6 _feed_inner_area">
-                      <div className="_left_inner_area_suggest_content _mar_b24">
-                        <h4 className="_left_inner_area_suggest_content_title _title5">
-                          Suggested People
-                        </h4>
-                        <span className="_left_inner_area_suggest_content_txt">
-                          <a className="_left_inner_area_suggest_content_txt_link" href="#0">
-                            See All
-                          </a>
-                        </span>
-                      </div>
-                      {suggestedPeople.map((person) => (
-                        <div key={person.id} className="_left_inner_area_suggest_info">
-                          <div className="_left_inner_area_suggest_info_box">
-                            <div className="_left_inner_area_suggest_info_image">
-                              <a href="profile.html">
-                                <div className="_info_img">
-                                  {person.name[0]}
-                                </div>
-                              </a>
-                            </div>
-                            <div className="_left_inner_area_suggest_info_txt">
-                              <a href="profile.html">
-                                <h4 className="_left_inner_area_suggest_info_title">
-                                  {person.name}
-                                </h4>
-                              </a>
-                              <p className="_left_inner_area_suggest_info_para">
-                                {person.subtitle}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="_left_inner_area_suggest_info_link">
-                            <a href="#0" className="_info_link">
-                              Connect
-                            </a>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <SidebarSection
+                    title="Suggested People"
+                    actionLabel="See All"
+                    actionHref="#0"
+                  >
+                    {suggestedPeople.map((person) => (
+                      <SuggestedPersonCard
+                        key={person.id}
+                        id={person.id}
+                        name={person.name}
+                        subtitle={person.subtitle}
+                        avatarSrc={person.avatar}
+                        profileHref="profile.html"
+                        onConnect={() => {
+                          toast.success(`Connected with ${person.name}`);
+                        }}
+                      />
+                    ))}
+                  </SidebarSection>
                 </aside>
               </div>
 
@@ -565,8 +332,8 @@ export default function FeedsPage() {
                         className="form-floating _feed_inner_text_area_box_form"
                         onSubmit={handleSubmit}
                       >
-                        <textarea
-                          className="form-control _textarea"
+                        <Textarea
+                          className="_textarea"
                           placeholder=" "
                           id="feed-post-textarea"
                           value={content}
@@ -684,10 +451,11 @@ export default function FeedsPage() {
                             </button>
                           </div>
 
-                          <button
+                          <Button
                             type="submit"
-                            className="_feed_inner_text_area_btn_link"
+                            variant="primary"
                             disabled={isPublishing || isUploadingImage}
+                            className="_feed_inner_text_area_btn_link"
                           >
                             <svg
                               className="_mar_img"
@@ -711,7 +479,7 @@ export default function FeedsPage() {
                                   ? "Posting..."
                                   : "Post"}
                             </span>
-                          </button>
+                          </Button>
                         </div>
                       </form>
                     </div>
@@ -775,32 +543,15 @@ export default function FeedsPage() {
                       </div>
                       <hr className="_underline" />
                       {friendActivity.map((friend) => (
-                        <div key={friend.id} className="_feed_right_inner_area_card_ppl">
-                          <div className="_feed_right_inner_area_card_ppl_box">
-                            <div className="_feed_right_inner_area_card_ppl_image">
-                              <a href="profile.html">
-                                <img
-                                  src={friend.avatar}
-                                  alt={friend.name}
-                                  className="_box_ppl_img"
-                                />
-                              </a>
-                            </div>
-                            <div className="_feed_right_inner_area_card_ppl_txt">
-                              <a href="profile.html">
-                                <h4 className="_feed_right_inner_area_card_ppl_title">
-                                  {friend.name}
-                                </h4>
-                              </a>
-                              <p className="_feed_right_inner_area_card_ppl_para">
-                                {friend.subtitle}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="_feed_right_inner_area_card_ppl_side">
-                            <span>{friend.meta}</span>
-                          </div>
-                        </div>
+                        <FriendActivityCard
+                          key={friend.id}
+                          id={friend.id}
+                          name={friend.name}
+                          subtitle={friend.subtitle}
+                          avatarSrc={friend.avatar}
+                          meta={friend.meta}
+                          profileHref="profile.html"
+                        />
                       ))}
                     </div>
                   </div>
