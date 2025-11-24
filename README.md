@@ -73,6 +73,17 @@ Validation runs on both client (zod) and server. Duplicate emails are rejected w
 | `pnpm db:migrate`  | Push schema to the Neon database       |
 | `pnpm db:studio`   | Launch Drizzle Studio                   |
 
+## Documentation
+
+Comprehensive guides and architecture documentation:
+
+- 📚 **[API Documentation](./buddyscript-next/docs/API_DOCUMENTATION.md)** - Complete API reference and endpoints
+- 🎨 **[Atomic Design Guide](./buddyscript-next/docs/ATOMIC_DESIGN_GUIDE.md)** - Component design system and patterns
+- 🏗️ **[Backend Architecture](./buddyscript-next/docs/BACKEND_ARCHITECTURE.md)** - Backend structure and patterns
+- 🗄️ **[Caching Architecture](./buddyscript-next/docs/CACHING_ARCHITECTURE.md)** - Redis caching implementation details
+- ⚡ **[Caching Guide](./buddyscript-next/docs/CACHING_GUIDE.md)** - Caching strategies and best practices
+- 📐 **[Layered Architecture Guide](./buddyscript-next/docs/LAYERED_ARCHITECTURE_GUIDE.md)** - Application layer structure
+
 ## Redis Caching
 
 This application implements a comprehensive Redis caching layer for high-performance post reads:
@@ -82,16 +93,12 @@ This application implements a comprehensive Redis caching layer for high-perform
 - **Strategy**: Cache-Aside pattern with smart invalidation
 - **Performance**: Sub-10ms response times for cached data, 80-90% database load reduction
 
-### Documentation
-- 📚 **[Complete Caching Guide](./CACHING_GUIDE.md)** - Architecture, strategies, and best practices
-- 📋 **[Implementation Summary](./CACHING_IMPLEMENTATION_SUMMARY.md)** - What was implemented and performance metrics
-- ⚡ **[Quick Reference](./CACHING_QUICK_REFERENCE.md)** - Common operations and code snippets
-
 ### Quick Start
 1. Add `REDIS_URL` to `.env.local` (see Environment variables section)
 2. Caching works automatically - no code changes needed
 3. Monitor cache hits/misses in application logs
 4. Check Upstash dashboard for metrics and monitoring
+5. See [Caching Guide](./buddyscript-next/docs/CACHING_GUIDE.md) for detailed documentation
 
 ## Testing checklist
 
@@ -100,4 +107,3 @@ This application implements a comprehensive Redis caching layer for high-perform
 - [x] Duplicate email conflict bubbles to UI
 - [x] Swagger docs generated under `/api/docs`
 
-_Note:_ A login page stub exists; the actual auth flow will be implemented in the next phase.
