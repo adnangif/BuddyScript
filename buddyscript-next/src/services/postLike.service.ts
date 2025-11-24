@@ -41,7 +41,11 @@ export const postLikeService = {
         // Invalidate like count cache and post cache
         await cacheService.del(CacheKeys.postLikeCount(postId));
         await cacheService.del(CacheKeys.post(postId));
-        console.log(`🗑️  Invalidated like count cache for post: ${postId}`);
+        
+        // Invalidate all feed caches since like count changed
+        // This ensures feeds show updated like counts immediately
+        await cacheService.delPattern(CacheKeys.patterns.allFeeds);
+        console.log(`🗑️  Invalidated like count cache and feeds for post: ${postId}`);
 
         return {
             success: true,
@@ -65,7 +69,11 @@ export const postLikeService = {
         // Invalidate like count cache and post cache
         await cacheService.del(CacheKeys.postLikeCount(postId));
         await cacheService.del(CacheKeys.post(postId));
-        console.log(`🗑️  Invalidated like count cache for post: ${postId}`);
+        
+        // Invalidate all feed caches since like count changed
+        // This ensures feeds show updated like counts immediately
+        await cacheService.delPattern(CacheKeys.patterns.allFeeds);
+        console.log(`🗑️  Invalidated like count cache and feeds for post: ${postId}`);
 
         return {
             success: true,

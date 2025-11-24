@@ -90,7 +90,11 @@ export const commentService = {
         // Invalidate comment count cache for the post
         await cacheService.del(CacheKeys.postCommentCount(input.postId));
         await cacheService.del(CacheKeys.post(input.postId));
-        console.log(`🗑️  Invalidated comment count cache for post: ${input.postId}`);
+        
+        // Invalidate all feed caches since comment count changed
+        // This ensures feeds show updated comment counts immediately
+        await cacheService.delPattern(CacheKeys.patterns.allFeeds);
+        console.log(`🗑️  Invalidated comment count cache and feeds for post: ${input.postId}`);
 
         return this.mapCommentToDTO(
             commentWithAuthor,
@@ -173,7 +177,11 @@ export const commentService = {
         // Invalidate comment count cache for the post
         await cacheService.del(CacheKeys.postCommentCount(comment.postId));
         await cacheService.del(CacheKeys.post(comment.postId));
-        console.log(`🗑️  Invalidated comment count cache for post: ${comment.postId}`);
+        
+        // Invalidate all feed caches since comment count changed
+        // This ensures feeds show updated comment counts immediately
+        await cacheService.delPattern(CacheKeys.patterns.allFeeds);
+        console.log(`🗑️  Invalidated comment count cache and feeds for post: ${comment.postId}`);
     },
 
     mapCommentToDTO(
