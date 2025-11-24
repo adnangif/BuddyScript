@@ -156,7 +156,7 @@ export default function FeedsPage() {
       <main className="feed-page">
         <section className="feed-card">
           <h1>Global Feed</h1>
-          <p>Checking your session and redirecting to login…</p>
+          <p>Redirecting to login…</p>
         </section>
       </main>
     );

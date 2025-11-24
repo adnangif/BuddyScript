@@ -2149,3 +2149,224 @@ ul {
 /*::-webkit-scrollbar-thumb:hover {
   background: #555;
 }*/
+
+
+/* Feed Page Loading/Auth States */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 20px rgba(24, 144, 255, 0);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.feed-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.feed-page::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(24, 144, 255, 0.1) 0%, transparent 70%);
+    animation: float 6s ease-in-out infinite;
+}
+
+.feed-card {
+    background: var(--bg2);
+    border-radius: 20px;
+    padding: 70px 50px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    max-width: 520px;
+    width: 100%;
+    animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(10px);
+}
+
+.feed-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, var(--color5), #0ACF83, var(--color5));
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+    animation: shimmer 3s linear infinite;
+    background-size: 200% 200%;
+}
+
+.feed-card:hover::before {
+    opacity: 0.15;
+}
+
+.feed-card h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--color1);
+    margin-bottom: 20px;
+    animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+    letter-spacing: -0.5px;
+    position: relative;
+}
+
+.feed-card h1::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color5), #0ACF83);
+    border-radius: 2px;
+    opacity: 0;
+    animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+}
+
+.feed-card p {
+    font-size: 16px;
+    color: var(--color4);
+    margin: 0;
+    margin-top: 12px;
+    animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.feed-card p::before {
+    content: '';
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--color5);
+    border-top-color: transparent;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+}
+
+/* Decorative dots */
+.feed-card::after {
+    content: '';
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    width: 8px;
+    height: 8px;
+    background: var(--color5);
+    border-radius: 50%;
+    box-shadow: 
+        -20px 0 0 var(--color8),
+        -40px 0 0 var(--color5);
+    opacity: 0.3;
+}
+
+@media (max-width: 768px) {
+    .feed-page {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ef 100%);
+    }
+    
+    .feed-card {
+        padding: 50px 30px;
+        border-radius: 16px;
+    }
+
+    .feed-card h1 {
+        font-size: 26px;
+    }
+
+    .feed-card p {
+        font-size: 15px;
+    }
+    
+    .feed-card p::before {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .feed-card::after {
+        top: 20px;
+        right: 20px;
+        width: 6px;
+        height: 6px;
+        box-shadow: 
+            -15px 0 0 var(--color8),
+            -30px 0 0 var(--color5);
+    }
+}
+
+@media (max-width: 480px) {
+    .feed-card {
+        padding: 40px 24px;
+    }
+
+    .feed-card h1 {
+        font-size: 24px;
+    }
+
+    .feed-card p {
+        font-size: 14px;
+        gap: 10px;
+    }
+}
