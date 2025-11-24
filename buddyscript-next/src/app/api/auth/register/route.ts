@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { users } from "@/db/schema";
 import { registerSchema } from "@/lib/validators/auth";
-import { signAuthToken } from "@/lib/jwt";
+import { authService } from "@/services/auth.service";
+import { DomainError } from "@/shared/errors/domain-error";
 
 export async function POST(request: Request) {
   let rawBody: unknown;
@@ -16,6 +13,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
   const result = registerSchema.safeParse(rawBody);
 
   if (!result.success) {
@@ -27,51 +25,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, password, firstName, lastName } = result.data;
-
   try {
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, email.toLowerCase()),
-    });
-
-    if (existingUser) {
+    const response = await authService.register(result.data);
+    return NextResponse.json(response, { status: 201 });
+  } catch (error) {
+    if (error instanceof DomainError) {
       return NextResponse.json(
-        { message: "Email is already registered" },
-        { status: 409 },
+        { message: error.message },
+        { status: error.statusCode }
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    const [createdUser] = await db
-      .insert(users)
-      .values({
-        email: email.toLowerCase(),
-        passwordHash,
-        firstName,
-        lastName,
-      })
-      .returning();
-
-    const token = signAuthToken({
-      sub: createdUser.id,
-      email: createdUser.email,
-    });
-
-    return NextResponse.json(
-      {
-        user: {
-          id: createdUser.id,
-          email: createdUser.email,
-          firstName: createdUser.firstName,
-          lastName: createdUser.lastName,
-        },
-        token,
-        expiresInSeconds: 3600,
-      },
-      { status: 201 },
-    );
-  } catch (error) {
     console.error("Registration failed", error);
     return NextResponse.json(
       { message: "Registration failed. Please try again." },
