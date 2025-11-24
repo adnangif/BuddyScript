@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { useRegister } from "@/hooks/useRegister";
 import { registerSchema } from "@/lib/validators/auth";
+import { Button, FormField, AuthLayout } from "@/app/ui/atomic";
 
 type FormState = {
   firstName: string;
@@ -46,26 +47,6 @@ export default function RegisterPage() {
         return next;
       });
     };
-
-  const getErrorId = (field: keyof FormState) =>
-    clientErrors[field] ? `registration-${field}-error` : undefined;
-
-  const renderError = (field: keyof FormState) => {
-    const message = clientErrors[field];
-    if (!message) {
-      return null;
-    }
-
-    return (
-      <p
-        id={`registration-${field}-error`}
-        className="_social_registration_error"
-        role="alert"
-      >
-        {message}
-      </p>
-    );
-  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -119,247 +100,162 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="_social_registration_wrapper _layout_main_wrapper">
-      <div className="_shape_one" aria-hidden="true">
-        <img src="/icons/shape1.svg" alt="" className="_shape_img" />
-        <img src="/icons/dark_shape.svg" alt="" className="_dark_shape" />
-      </div>
-      <div className="_shape_two" aria-hidden="true">
-        <img src="/icons/shape2.svg" alt="" className="_shape_img" />
-        <img
-          src="/icons/dark_shape1.svg"
-          alt=""
-          className="_dark_shape _dark_shape_opacity"
-        />
-      </div>
-      <div className="_shape_three" aria-hidden="true">
-        <img src="/icons/shape3.svg" alt="" className="_shape_img" />
-        <img
-          src="/icons/dark_shape2.svg"
-          alt=""
-          className="_dark_shape _dark_shape_opacity"
-        />
-      </div>
+    <AuthLayout
+      title="Registration"
+      subtitle="Get Started Now"
+      imageUrl="/icons/registration.png"
+      imageDarkUrl="/icons/registration1.png"
+      imageAlt="Registration"
+      imagePosition="left"
+      showGoogleSignIn={true}
+      isGoogleLoading={isPending}
+      wrapperClassName="_social_registration_wrapper"
+    >
+      <form
+        className="_social_registration_form"
+        noValidate
+        onSubmit={handleSubmit}
+      >
+        <div className="row">
+          <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+            <FormField
+              label="First Name"
+              name="firstName"
+              type="text"
+              value={values.firstName}
+              onChange={handleInputChange("firstName")}
+              error={clientErrors.firstName}
+              required
+              autoComplete="given-name"
+              containerClassName="_social_registration_form_input _mar_b14"
+              labelClassName="_social_registration_label _mar_b8"
+              inputClassName="form-control _social_registration_input"
+              errorClassName="_social_registration_error"
+            />
+          </div>
+          <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+            <FormField
+              label="Last Name"
+              name="lastName"
+              type="text"
+              value={values.lastName}
+              onChange={handleInputChange("lastName")}
+              error={clientErrors.lastName}
+              required
+              autoComplete="family-name"
+              containerClassName="_social_registration_form_input _mar_b14"
+              labelClassName="_social_registration_label _mar_b8"
+              inputClassName="form-control _social_registration_input"
+              errorClassName="_social_registration_error"
+            />
+          </div>
+        </div>
+        <div className="row">
+          <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+            <FormField
+              label="Email"
+              name="email"
+              type="email"
+              value={values.email}
+              onChange={handleInputChange("email")}
+              error={clientErrors.email}
+              required
+              autoComplete="email"
+              containerClassName="_social_registration_form_input _mar_b14"
+              labelClassName="_social_registration_label _mar_b8"
+              inputClassName="form-control _social_registration_input"
+              errorClassName="_social_registration_error"
+            />
+          </div>
+          <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+            <FormField
+              label="Password"
+              name="password"
+              type="password"
+              value={values.password}
+              onChange={handleInputChange("password")}
+              error={clientErrors.password}
+              required
+              autoComplete="new-password"
+              containerClassName="_social_registration_form_input _mar_b14"
+              labelClassName="_social_registration_label _mar_b8"
+              inputClassName="form-control _social_registration_input"
+              errorClassName="_social_registration_error"
+            />
+          </div>
+          <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+            <FormField
+              label="Repeat Password"
+              name="confirmPassword"
+              type="password"
+              value={values.confirmPassword}
+              onChange={handleInputChange("confirmPassword")}
+              error={clientErrors.confirmPassword}
+              required
+              autoComplete="new-password"
+              containerClassName="_social_registration_form_input _mar_b14"
+              labelClassName="_social_registration_label _mar_b8"
+              inputClassName="form-control _social_registration_input"
+              errorClassName="_social_registration_error"
+            />
+          </div>
+        </div>
 
-      <section className="_social_registration_wrap">
-        <div className="container">
-          <div className="row align-items-center">
-            <div className="col-xl-8 col-lg-8 col-md-12 col-sm-12">
-              <div className="_social_registration_right">
-                <div className="_social_registration_right_image">
-                  <img src="/icons/registration.png" alt="Registration" />
-                </div>
-                <div className="_social_registration_right_image_dark">
-                  <img src="/icons/registration1.png" alt="Registration" />
-                </div>
-              </div>
-            </div>
+        {statusMessage ? (
+          <div
+            className="_social_registration_form_status _mar_b14"
+            role="status"
+            aria-live="polite"
+          >
+            {statusMessage}
+          </div>
+        ) : null}
 
-            <div className="col-xl-4 col-lg-4 col-md-12 col-sm-12">
-              <div className="_social_registration_content">
-                <div className="_social_registration_right_logo _mar_b28">
-                  <img src="/icons/logo.svg" alt="BuddyScript" className="_right_logo" />
-                </div>
-                <p className="_social_registration_content_para _mar_b8">
-                  Get Started Now
-                </p>
-                <h4 className="_social_registration_content_title _titl4 _mar_b50">
-                  Registration
-                </h4>
-                <button
-                  type="button"
-                  className="_social_registration_content_btn _mar_b40"
-                >
-                  <img src="/icons/google.svg" alt="Google" className="_google_img" />
-                  <span>Register with google</span>
-                </button>
-                <div className="_social_registration_content_bottom_txt _mar_b40">
-                  <span>Or</span>
-                </div>
-
-                <form
-                  className="_social_registration_form"
-                  noValidate
-                  onSubmit={handleSubmit}
-                >
-                  <div className="row">
-                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
-                      <div className="_social_registration_form_input _mar_b14">
-                        <label
-                          className="_social_registration_label _mar_b8"
-                          htmlFor="registration-first-name"
-                        >
-                          First Name
-                        </label>
-                        <input
-                          type="text"
-                          id="registration-first-name"
-                          name="firstName"
-                          className="form-control _social_registration_input"
-                          value={values.firstName}
-                          onChange={handleInputChange("firstName")}
-                          aria-invalid={Boolean(clientErrors.firstName)}
-                          aria-describedby={getErrorId("firstName")}
-                          autoComplete="given-name"
-                          required
-                        />
-                        {renderError("firstName")}
-                      </div>
-                    </div>
-                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
-                      <div className="_social_registration_form_input _mar_b14">
-                        <label
-                          className="_social_registration_label _mar_b8"
-                          htmlFor="registration-last-name"
-                        >
-                          Last Name
-                        </label>
-                        <input
-                          type="text"
-                          id="registration-last-name"
-                          name="lastName"
-                          className="form-control _social_registration_input"
-                          value={values.lastName}
-                          onChange={handleInputChange("lastName")}
-                          aria-invalid={Boolean(clientErrors.lastName)}
-                          aria-describedby={getErrorId("lastName")}
-                          autoComplete="family-name"
-                          required
-                        />
-                        {renderError("lastName")}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
-                      <div className="_social_registration_form_input _mar_b14">
-                        <label
-                          className="_social_registration_label _mar_b8"
-                          htmlFor="registration-email"
-                        >
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          id="registration-email"
-                          name="email"
-                          className="form-control _social_registration_input"
-                          value={values.email}
-                          onChange={handleInputChange("email")}
-                          aria-invalid={Boolean(clientErrors.email)}
-                          aria-describedby={getErrorId("email")}
-                          autoComplete="email"
-                          required
-                        />
-                        {renderError("email")}
-                      </div>
-                    </div>
-                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
-                      <div className="_social_registration_form_input _mar_b14">
-                        <label
-                          className="_social_registration_label _mar_b8"
-                          htmlFor="registration-password"
-                        >
-                          Password
-                        </label>
-                        <input
-                          type="password"
-                          id="registration-password"
-                          name="password"
-                          className="form-control _social_registration_input"
-                          value={values.password}
-                          onChange={handleInputChange("password")}
-                          aria-invalid={Boolean(clientErrors.password)}
-                          aria-describedby={getErrorId("password")}
-                          autoComplete="new-password"
-                          required
-                        />
-                        {renderError("password")}
-                      </div>
-                    </div>
-                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
-                      <div className="_social_registration_form_input _mar_b14">
-                        <label
-                          className="_social_registration_label _mar_b8"
-                          htmlFor="registration-confirm-password"
-                        >
-                          Repeat Password
-                        </label>
-                        <input
-                          type="password"
-                          id="registration-confirm-password"
-                          name="confirmPassword"
-                          className="form-control _social_registration_input"
-                          value={values.confirmPassword}
-                          onChange={handleInputChange("confirmPassword")}
-                          aria-invalid={Boolean(clientErrors.confirmPassword)}
-                          aria-describedby={getErrorId("confirmPassword")}
-                          autoComplete="new-password"
-                          required
-                        />
-                        {renderError("confirmPassword")}
-                      </div>
-                    </div>
-                  </div>
-
-                  {statusMessage ? (
-                    <div
-                      className="_social_registration_form_status _mar_b14"
-                      role="status"
-                      aria-live="polite"
-                    >
-                      {statusMessage}
-                    </div>
-                  ) : null}
-
-                  <div className="row">
-                    <div className="col-lg-12 col-xl-12 col-md-12 col-sm-12">
-                      <div className="form-check _social_registration_form_check">
-                        <input
-                          className="form-check-input _social_registration_form_check_input"
-                          type="radio"
-                          id="registration-terms"
-                          defaultChecked
-                        />
-                        <label
-                          className="form-check-label _social_registration_form_check_label"
-                          htmlFor="registration-terms"
-                        >
-                          I agree to terms &amp; conditions
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-lg-12 col-md-12 col-xl-12 col-sm-12">
-                      <div className="_social_registration_form_btn _mar_t40 _mar_b24">
-                        <button
-                          type="submit"
-                          className="_social_registration_form_btn_link _btn1"
-                          disabled={isPending}
-                        >
-                          {isPending ? "Creating..." : "Create account"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-
-                <div className="row">
-                  <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
-                    <div className="_social_registration_bottom_txt">
-                      <p className="_social_registration_bottom_txt_para">
-                        Already have an account? <a href="/login">Login Now</a>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div className="row">
+          <div className="col-lg-12 col-xl-12 col-md-12 col-sm-12">
+            <div className="form-check _social_registration_form_check">
+              <input
+                className="form-check-input _social_registration_form_check_input"
+                type="radio"
+                id="registration-terms"
+                defaultChecked
+              />
+              <label
+                className="form-check-label _social_registration_form_check_label"
+                htmlFor="registration-terms"
+              >
+                I agree to terms &amp; conditions
+              </label>
             </div>
           </div>
         </div>
-      </section>
-    </main>
+
+        <div className="row">
+          <div className="col-lg-12 col-md-12 col-xl-12 col-sm-12">
+            <div className="_social_registration_form_btn _mar_t40 _mar_b24">
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isPending}
+                fullWidth
+                className="_social_registration_form_btn_link"
+              >
+                {isPending ? "Creating..." : "Create account"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div className="row">
+        <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+          <div className="_social_registration_bottom_txt">
+            <p className="_social_registration_bottom_txt_para">
+              Already have an account? <a href="/login">Login Now</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </AuthLayout>
   );
 }
