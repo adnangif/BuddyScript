@@ -5,6 +5,7 @@ import { CreateCommentInput } from "@/lib/validators/comments";
 
 export const usePostComments = (postId: string) => {
     const token = useAuthStore((state) => state.user?.token);
+    const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
     return useQuery({
         queryKey: ["comments", postId],
@@ -24,6 +25,7 @@ export const usePostComments = (postId: string) => {
 
             return response.json();
         },
+        enabled: hasHydrated, // Only fetch after store has hydrated
     });
 };
 
@@ -66,6 +68,7 @@ export const useCreateComment = (postId: string) => {
 
 export const useCommentReplies = (commentId: string) => {
     const token = useAuthStore((state) => state.user?.token);
+    const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
     return useQuery({
         queryKey: ["replies", commentId],
@@ -86,6 +89,6 @@ export const useCommentReplies = (commentId: string) => {
             const data = await response.json();
             return { comments: data.replies };
         },
-        enabled: false, // Only fetch when explicitly requested
+        enabled: false, // Only fetch when explicitly requested (but respect hydration when enabled manually)
     });
 };

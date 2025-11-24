@@ -32,6 +32,7 @@ const fetchPosts = async (
 
 export const usePosts = (limit: number = 10) => {
   const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const token = user?.token;
 
   return useInfiniteQuery({
@@ -41,5 +42,6 @@ export const usePosts = (limit: number = 10) => {
     getNextPageParam: (lastPage) => {
       return lastPage.hasMore ? lastPage.nextCursor : undefined;
     },
+    enabled: hasHydrated, // Only fetch after store has hydrated
   });
 };
