@@ -43,6 +43,8 @@ export const useLikePost = (postId: string) => {
                             ? { ...post, hasUserLiked: true, likeCount: (post.likeCount ?? 0) + 1 }
                             : post
                     ),
+                    nextCursor: previousPosts.nextCursor,
+                    hasMore: previousPosts.hasMore,
                 });
             }
 
@@ -102,6 +104,8 @@ export const useUnlikePost = (postId: string) => {
                             ? { ...post, hasUserLiked: false, likeCount: Math.max(0, (post.likeCount ?? 0) - 1) }
                             : post
                     ),
+                    nextCursor: previousPosts.nextCursor,
+                    hasMore: previousPosts.hasMore,
                 });
             }
 

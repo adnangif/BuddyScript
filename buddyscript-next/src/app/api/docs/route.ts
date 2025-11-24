@@ -1,12 +1,8 @@
-import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "@/lib/swagger";
+import { NextResponse } from "next/server";
+import { getApiDocs } from "@/lib/swagger";
 
 export async function GET() {
-  const html = swaggerUi.generateHTML(swaggerSpec);
-  return new Response(html, {
-    headers: {
-      "Content-Type": "text/html",
-    },
-  });
+  const spec = getApiDocs();
+  return NextResponse.json(spec);
 }
 

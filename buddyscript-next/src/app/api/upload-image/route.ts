@@ -1,5 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * @swagger
+ * /upload-image:
+ *   post:
+ *     summary: Upload an image
+ *     description: Upload an image file to ImgBB service and get back the image URL
+ *     tags: [Upload]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file to upload (JPEG, PNG, GIF, etc.)
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 imageUrl:
+ *                   type: string
+ *                   format: uri
+ *                   description: Direct URL to the uploaded image
+ *                   example: https://i.ibb.co/abc123/image.jpg
+ *                 displayUrl:
+ *                   type: string
+ *                   format: uri
+ *                   description: ImgBB display page URL
+ *                   example: https://ibb.co/abc123
+ *                 deleteUrl:
+ *                   type: string
+ *                   format: uri
+ *                   description: URL to delete the uploaded image
+ *                   example: https://ibb.co/abc123/delete
+ *       400:
+ *         description: No image provided or invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error or upload service error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

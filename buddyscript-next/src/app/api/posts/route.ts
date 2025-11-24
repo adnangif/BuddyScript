@@ -4,6 +4,55 @@ import { postService } from "@/services/post.service";
 import { authenticateRequest, requireAuth } from "@/shared/middleware/auth";
 import { DomainError } from "@/shared/errors/domain-error";
 
+/**
+ * @swagger
+ * /posts:
+ *   get:
+ *     summary: Get list of posts
+ *     description: Retrieve a paginated list of posts. Authentication is optional - if authenticated, posts will include like status for the user.
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: query
+ *         name: cursor
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Cursor for pagination (post ID to start from)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Number of posts to return (1-50)
+ *     responses:
+ *       200:
+ *         description: List of posts retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 posts:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Post'
+ *                 nextCursor:
+ *                   type: string
+ *                   format: uuid
+ *                   nullable: true
+ *                   description: Cursor for next page
+ *                 hasMore:
+ *                   type: boolean
+ *                   description: Whether more posts are available
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(request: NextRequest) {
   try {
     // Get user from token if available
@@ -46,6 +95,69 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * @swagger
+ * /posts:
+ *   post:
+ *     summary: Create a new post
+ *     description: Create a new post with optional image. Requires authentication.
+ *     tags: [Posts]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 500
+ *                 description: Post content
+ *                 example: This is my first post!
+ *               imageUrl:
+ *                 type: string
+ *                 format: uri
+ *                 nullable: true
+ *                 description: Optional image URL
+ *                 example: https://example.com/image.jpg
+ *               isPublic:
+ *                 type: boolean
+ *                 default: true
+ *                 description: Whether the post is public
+ *     responses:
+ *       201:
+ *         description: Post created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 post:
+ *                   $ref: '#/components/schemas/Post'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Unauthorized - authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
