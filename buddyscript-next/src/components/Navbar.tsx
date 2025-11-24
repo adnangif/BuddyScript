@@ -83,7 +83,7 @@ const profileMenuItems: ProfileMenuItemProps[] = [
         ),
     },
     {
-        href: '/logout',
+        href: '/login',
         label: 'Log Out',
         icon: (
             <svg

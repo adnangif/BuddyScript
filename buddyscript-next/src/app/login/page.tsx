@@ -75,7 +75,7 @@ export default function LoginPage() {
       const successMessage = "Login successful! Redirecting...";
       setStatusMessage(successMessage);
       toast.success(successMessage);
-      router.push("/");
+      router.push("/feeds");
     } catch (mutationError) {
       const fallbackMessage =
         mutationError instanceof Error
