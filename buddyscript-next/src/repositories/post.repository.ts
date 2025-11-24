@@ -1,6 +1,7 @@
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, lt, or, sql } from "drizzle-orm";
 import { dbClient } from "@/database/client";
 import { posts, users } from "@/db/schema";
+import { CursorPaginatedResult } from "@/shared/types/pagination";
 
 export interface PostRecord {
     id: string;
@@ -65,15 +66,30 @@ export const postRepository = {
 
     async listWithAuthors(params: {
         userId?: string;
-    }): Promise<PostWithAuthor[]> {
+        cursor?: string | null;
+        limit?: number;
+    }): Promise<CursorPaginatedResult<PostWithAuthor>> {
+        const limit = params.limit ?? 10; // Default to 10 posts per page
+        
         // Build where clause: show public posts OR posts from the authenticated user
-        let whereClause;
+        let whereConditions = [];
+        
         if (params.userId) {
-            whereClause = or(eq(posts.isPublic, true), eq(posts.userId, params.userId));
+            whereConditions.push(or(eq(posts.isPublic, true), eq(posts.userId, params.userId)));
         } else {
-            whereClause = eq(posts.isPublic, true);
+            whereConditions.push(eq(posts.isPublic, true));
         }
 
+        // Add cursor condition if provided (cursor-based pagination)
+        if (params.cursor) {
+            whereConditions.push(lt(posts.createdAt, new Date(params.cursor)));
+        }
+
+        const whereClause = whereConditions.length > 1 
+            ? and(...whereConditions) 
+            : whereConditions[0];
+
+        // Fetch limit + 1 to determine if there are more posts
         const rows = await dbClient
             .select({
                 id: posts.id,
@@ -89,21 +105,32 @@ export const postRepository = {
             .from(posts)
             .innerJoin(users, eq(posts.userId, users.id))
             .where(whereClause)
-            .orderBy(desc(posts.createdAt));
+            .orderBy(desc(posts.createdAt))
+            .limit(limit + 1);
 
-        return rows.map(row => ({
-            id: row.id,
-            content: row.content,
-            imageUrl: row.imageUrl,
-            isPublic: row.isPublic,
-            createdAt: row.createdAt,
-            userId: row.userId,
-            author: {
-                id: row.authorId,
-                firstName: row.authorFirstName,
-                lastName: row.authorLastName,
-            },
-        }));
+        const hasMore = rows.length > limit;
+        const data = rows.slice(0, limit);
+        const nextCursor = hasMore && data.length > 0 
+            ? data[data.length - 1].createdAt.toISOString() 
+            : null;
+
+        return {
+            data: data.map(row => ({
+                id: row.id,
+                content: row.content,
+                imageUrl: row.imageUrl,
+                isPublic: row.isPublic,
+                createdAt: row.createdAt,
+                userId: row.userId,
+                author: {
+                    id: row.authorId,
+                    firstName: row.authorFirstName,
+                    lastName: row.authorLastName,
+                },
+            })),
+            nextCursor,
+            hasMore,
+        };
     },
 
     async create(payload: {

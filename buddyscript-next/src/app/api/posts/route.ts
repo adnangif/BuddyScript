@@ -9,12 +9,26 @@ export async function GET(request: NextRequest) {
     // Get user from token if available
     const user = await authenticateRequest(request);
 
-    const posts = await postService.listPosts({
+    // Extract pagination params from query string
+    const searchParams = request.nextUrl.searchParams;
+    const cursor = searchParams.get('cursor') || null;
+    const limit = searchParams.get('limit') 
+      ? parseInt(searchParams.get('limit')!, 10) 
+      : 10;
+
+    // Validate limit
+    const validLimit = Math.min(Math.max(limit, 1), 50); // Between 1 and 50
+
+    const result = await postService.listPosts({
       userId: user?.id,
+      cursor,
+      limit: validLimit,
     });
 
     return NextResponse.json({
-      posts,
+      posts: result.data,
+      nextCursor: result.nextCursor,
+      hasMore: result.hasMore,
     });
   } catch (error) {
     if (error instanceof DomainError) {

@@ -2,6 +2,7 @@ import { postRepository, type PostWithAuthor } from "@/repositories/post.reposit
 import { postLikeRepository } from "@/repositories/postLike.repository";
 import { commentRepository } from "@/repositories/comment.repository";
 import { DomainError } from "@/shared/errors/domain-error";
+import { CursorPaginatedResult } from "@/shared/types/pagination";
 
 export interface CreatePostInput {
     userId: string;
@@ -60,14 +61,20 @@ export const postService = {
         return this.mapPostToDTO(postWithAuthor, likeCount, commentCount, hasUserLiked);
     },
 
-    async listPosts(params: { userId?: string }): Promise<PostDTO[]> {
-        const posts = await postRepository.listWithAuthors({
+    async listPosts(params: { 
+        userId?: string;
+        cursor?: string | null;
+        limit?: number;
+    }): Promise<CursorPaginatedResult<PostDTO>> {
+        const postsResult = await postRepository.listWithAuthors({
             userId: params.userId,
+            cursor: params.cursor,
+            limit: params.limit,
         });
 
         // Enrich with counts and user-specific data
         const enrichedPosts = await Promise.all(
-            posts.map(async (post) => {
+            postsResult.data.map(async (post) => {
                 const likeCount = await postLikeRepository.countByPost(post.id);
                 const commentCount = await commentRepository.listByPostId(post.id).then(c => c.length);
                 const hasUserLiked = params.userId
@@ -78,7 +85,11 @@ export const postService = {
             })
         );
 
-        return enrichedPosts;
+        return {
+            data: enrichedPosts,
+            nextCursor: postsResult.nextCursor,
+            hasMore: postsResult.hasMore,
+        };
     },
 
     async getPostById(postId: string, userId?: string): Promise<PostDTO> {

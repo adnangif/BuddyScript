@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx scripts/seed-posts.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -43,6 +44,7 @@
     "eslint-config-next": "16.0.3",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

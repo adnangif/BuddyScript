@@ -17,6 +17,7 @@ import { FeedPost } from "@/hooks/types";
 import { usePosts } from "@/hooks/usePosts";
 import { useAuthStore } from "@/stores/auth-store";
 import { uploadImage } from "@/lib/upload-image";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import {
   Button,
   Textarea,
@@ -24,6 +25,7 @@ import {
   SuggestedPersonCard,
   FriendActivityCard,
   SidebarSection,
+  LoadingSpinner,
 } from "@/app/ui/atomic";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -100,11 +102,15 @@ export default function FeedsPage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data, isLoading, isFetching, refetch } = usePosts();
   const {
-    mutateAsync: createPost,
-    isPending: isPublishing,
-  } = useCreatePost();
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = usePosts(10);
+  const { mutateAsync: createPost, isPending: isPublishing } = useCreatePost();
 
   useEffect(() => {
     if (hasHydrated && !user) {
@@ -112,16 +118,27 @@ export default function FeedsPage() {
     }
   }, [hasHydrated, router, user]);
 
+  // Flatten all pages into a single array of posts
   const orderedPosts = useMemo<FeedPost[]>(() => {
-    if (!data?.posts) {
+    if (!data?.pages) {
       return [];
     }
-    return [...data.posts].sort(
-      (postA, postB) =>
-        new Date(postB.createdAt).getTime() -
-        new Date(postA.createdAt).getTime(),
-    );
-  }, [data?.posts]);
+    // Flatten all pages and extract posts
+    return data.pages.flatMap((page) => page.posts);
+  }, [data?.pages]);
+
+  // Setup intersection observer for infinite scroll
+  const loadMoreRef = useIntersectionObserver(
+    () => {
+      if (hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    },
+    {
+      enabled: hasNextPage && !isFetchingNextPage,
+      rootMargin: "100px", // Start loading 100px before the element is visible
+    }
+  );
 
   if (!hasHydrated) {
     return (
@@ -486,7 +503,7 @@ export default function FeedsPage() {
                   </div>
 
                   <div aria-live="polite">
-                    {isLoading || isFetching ? (
+                    {isLoading ? (
                       <article className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16">
                         <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
                           <p className="_feed_inner_timeline_post_title">Loading posts…</p>
@@ -520,6 +537,22 @@ export default function FeedsPage() {
                     {orderedPosts.map((post) => (
                       <PostCard key={post.id} post={post} />
                     ))}
+
+                    {/* Infinite scroll trigger */}
+                    {hasNextPage && (
+                      <div ref={loadMoreRef} style={{ minHeight: "20px" }}>
+                        {isFetchingNextPage && <LoadingSpinner />}
+                      </div>
+                    )}
+
+                    {/* End of feed indicator */}
+                    {!hasNextPage && orderedPosts.length > 0 && (
+                      <div className="_feed_inner_timeline_content _padd_r24 _padd_l24 _padd_t12 _padd_b12">
+                        <p style={{ textAlign: "center", color: "#888", fontSize: "14px" }}>
+                          You&apos;re all caught up! 🎉
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </section>
               </div>

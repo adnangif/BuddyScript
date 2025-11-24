@@ -34,6 +34,8 @@ export type FeedPost = {
 
 export type PostsQueryResponse = {
   posts: FeedPost[];
+  nextCursor: string | null;
+  hasMore: boolean;
 };
 
 export type CreatePostResponse = {

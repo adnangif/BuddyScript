@@ -37,6 +37,8 @@ export type { NavLinkProps } from './atoms/NavLink';
 export { SearchInput } from './atoms/SearchInput';
 export type { SearchInputProps } from './atoms/SearchInput';
 
+export { LoadingSpinner } from './LoadingSpinner';
+
 // Molecules
 export { FormField } from './molecules/FormField';
 export type { FormFieldProps } from './molecules/FormField';
