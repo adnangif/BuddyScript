@@ -215,9 +215,13 @@ export default function FeedsPage() {
 
       // Upload image first if selected
       if (selectedImage) {
+        if (!user?.token) {
+          toast.error("You must be logged in to upload images.");
+          return;
+        }
         setIsUploadingImage(true);
         try {
-          imageUrl = await uploadImage(selectedImage);
+          imageUrl = await uploadImage(selectedImage, user.token);
         } catch (error) {
           toast.error(
             error instanceof Error ? error.message : "Failed to upload image",

@@ -1,10 +1,11 @@
 /**
  * Upload an image file to ImgBB via our API endpoint
  * @param file The image file to upload
+ * @param token JWT authentication token
  * @returns The uploaded image URL
  * @throws Error if upload fails
  */
-export async function uploadImage(file: File): Promise<string> {
+export async function uploadImage(file: File, token: string): Promise<string> {
     // Validate file type
     if (!file.type.startsWith("image/")) {
         throw new Error("File must be an image");
@@ -21,6 +22,9 @@ export async function uploadImage(file: File): Promise<string> {
 
     const response = await fetch("/api/upload-image", {
         method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
         body: formData,
     });
 

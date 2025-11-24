@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/shared/middleware/auth";
+import { DomainError } from "@/shared/errors/domain-error";
 
 /**
  * @swagger
@@ -118,6 +119,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Image upload error:", error);
+    
+    // Handle DomainError (e.g., authentication errors) with proper status codes
+    if (error instanceof DomainError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.statusCode },
+      );
+    }
+    
+    // Handle unexpected errors
     return NextResponse.json(
       { message: "Unable to upload image" },
       { status: 500 },
