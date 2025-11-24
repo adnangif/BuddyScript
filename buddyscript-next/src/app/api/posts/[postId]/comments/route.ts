@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCommentSchema } from "@/lib/validators/comments";
 import { commentService } from "@/services/comment.service";
-import { authenticateRequest, requireAuth } from "@/shared/middleware/auth";
+import { requireAuth } from "@/shared/middleware/auth";
 import { DomainError } from "@/shared/errors/domain-error";
 
 /**
@@ -9,8 +9,10 @@ import { DomainError } from "@/shared/errors/domain-error";
  * /posts/{postId}/comments:
  *   get:
  *     summary: Get comments for a post
- *     description: Retrieve all top-level comments for a specific post. Authentication is optional.
+ *     description: Retrieve all top-level comments for a specific post. Authentication is required - the user must provide a valid Bearer token.
  *     tags: [Comments]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: postId
@@ -51,10 +53,10 @@ export async function GET(
 ) {
   try {
     const { postId } = await params;
-    const user = await authenticateRequest(request);
+    const user = await requireAuth(request);
 
     const comments = await commentService.listCommentsByPost(postId, {
-      userId: user?.id,
+      userId: user.id,
     });
 
     return NextResponse.json({

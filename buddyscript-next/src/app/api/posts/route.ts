@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPostSchema } from "@/lib/validators/posts";
 import { postService } from "@/services/post.service";
-import { authenticateRequest, requireAuth } from "@/shared/middleware/auth";
+import { requireAuth } from "@/shared/middleware/auth";
 import { DomainError } from "@/shared/errors/domain-error";
 
 /**
@@ -9,8 +9,10 @@ import { DomainError } from "@/shared/errors/domain-error";
  * /posts:
  *   get:
  *     summary: Get list of posts
- *     description: Retrieve a paginated list of posts. Authentication is optional - if authenticated, posts will include like status for the user.
+ *     description: Retrieve a paginated list of posts. Authentication is required - the user must provide a valid Bearer token. Responses include like status for the authenticated user.
  *     tags: [Posts]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: query
  *         name: cursor
@@ -55,8 +57,8 @@ import { DomainError } from "@/shared/errors/domain-error";
  */
 export async function GET(request: NextRequest) {
   try {
-    // Get user from token if available
-    const user = await authenticateRequest(request);
+    // Require a valid authenticated user
+    const user = await requireAuth(request);
 
     // Extract pagination params from query string
     const searchParams = request.nextUrl.searchParams;
@@ -69,7 +71,7 @@ export async function GET(request: NextRequest) {
     const validLimit = Math.min(Math.max(limit, 1), 50); // Between 1 and 50
 
     const result = await postService.listPosts({
-      userId: user?.id,
+  userId: user.id,
       cursor,
       limit: validLimit,
     });

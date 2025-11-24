@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { commentService } from "@/services/comment.service";
-import { authenticateRequest } from "@/shared/middleware/auth";
+import { requireAuth } from "@/shared/middleware/auth";
 import { DomainError } from "@/shared/errors/domain-error";
 
 /**
@@ -8,8 +8,10 @@ import { DomainError } from "@/shared/errors/domain-error";
  * /comments/{commentId}/replies:
  *   get:
  *     summary: Get replies to a comment
- *     description: Retrieve all replies for a specific comment. Authentication is optional.
+ *     description: Retrieve all replies for a specific comment. Authentication is required - the user must provide a valid Bearer token.
  *     tags: [Comments]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: commentId
@@ -50,19 +52,19 @@ export async function GET(
 ) {
   try {
     const { commentId } = await params;
-    const user = await authenticateRequest(request);
+    const user = await requireAuth(request);
 
     // Get the parent comment to find its postId
     const parentComment = await commentService.getCommentById(
       commentId,
-      user?.id
+      user.id
     );
 
     // Fetch replies
     const replies = await commentService.listCommentsByPost(
       parentComment.postId,
       {
-        userId: user?.id,
+        userId: user.id,
         parentCommentId: commentId,
       }
     );

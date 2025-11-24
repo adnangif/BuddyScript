@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/shared/middleware/auth";
 
 /**
  * @swagger
  * /upload-image:
  *   post:
  *     summary: Upload an image
- *     description: Upload an image file to ImgBB service and get back the image URL
+ *     description: Upload an image file to ImgBB service and get back the image URL. Requires authentication.
  *     tags: [Upload]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -58,6 +61,7 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth(request);
     const formData = await request.formData();
     const image = formData.get("image");
 
