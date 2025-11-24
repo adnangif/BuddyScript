@@ -2,22 +2,28 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="placeholder-page">
-      <div className="placeholder-page__card">
-        <h1 className="placeholder-page__title">BuddyScript</h1>
-        <p className="placeholder-page__body">
-          The new BuddyScript experience is under construction. Start by
-          creating an account with our refreshed registration flow.
-        </p>
-        <div className="placeholder-page__actions">
-          <Link className="register-form__submit" href="/register">
-            Create account
-          </Link>
-          <Link className="register-form__link" href="/login">
-            Go to login
-          </Link>
-        </div>
-      </div>
-    </main>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '20px',
+      padding: '20px'
+    }}>
+      <h1 style={{ fontSize: '40px', fontWeight: '600' }}>BuddyScript</h1>
+      <Link href="/feeds" style={{ fontSize: '18px', textDecoration: 'none', color: '#1890FF' }}>
+        Feeds
+      </Link>
+      <Link href="/login" style={{ fontSize: '18px', textDecoration: 'none', color: '#1890FF' }}>
+        Login
+      </Link>
+      <Link href="/register" style={{ fontSize: '18px', textDecoration: 'none', color: '#1890FF' }}>
+        Register
+      </Link>
+      <Link href="/muhammadfahim.pdf" target="_blank" rel="noopener noreferrer" style={{ fontSize: '18px', textDecoration: 'none', color: '#377DFF' }}>
+        Resume
+      </Link>
+    </div>
   );
 }
