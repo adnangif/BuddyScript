@@ -1,6 +1,7 @@
 import { postLikeRepository } from "@/repositories/postLike.repository";
 import { postRepository } from "@/repositories/post.repository";
 import { DomainError } from "@/shared/errors/domain-error";
+import { cacheService, CacheKeys } from "./cache.service";
 
 export interface LikeResult {
     success: boolean;
@@ -37,6 +38,11 @@ export const postLikeService = {
         // Get updated like count
         const likeCount = await postLikeRepository.countByPost(postId);
 
+        // Invalidate like count cache and post cache
+        await cacheService.del(CacheKeys.postLikeCount(postId));
+        await cacheService.del(CacheKeys.post(postId));
+        console.log(`🗑️  Invalidated like count cache for post: ${postId}`);
+
         return {
             success: true,
             likeCount,
@@ -55,6 +61,11 @@ export const postLikeService = {
 
         // Get updated like count
         const likeCount = await postLikeRepository.countByPost(postId);
+
+        // Invalidate like count cache and post cache
+        await cacheService.del(CacheKeys.postLikeCount(postId));
+        await cacheService.del(CacheKeys.post(postId));
+        console.log(`🗑️  Invalidated like count cache for post: ${postId}`);
 
         return {
             success: true,

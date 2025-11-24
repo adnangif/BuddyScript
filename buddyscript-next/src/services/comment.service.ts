@@ -5,6 +5,7 @@ import {
 import { postRepository } from "@/repositories/post.repository";
 import { commentLikeRepository } from "@/repositories/commentLike.repository";
 import { DomainError } from "@/shared/errors/domain-error";
+import { cacheService, CacheKeys } from "./cache.service";
 
 export interface CreateCommentInput {
     postId: string;
@@ -86,6 +87,11 @@ export const commentService = {
             createdComment.id
         ));
 
+        // Invalidate comment count cache for the post
+        await cacheService.del(CacheKeys.postCommentCount(input.postId));
+        await cacheService.del(CacheKeys.post(input.postId));
+        console.log(`🗑️  Invalidated comment count cache for post: ${input.postId}`);
+
         return this.mapCommentToDTO(
             commentWithAuthor,
             likeCount,
@@ -163,6 +169,11 @@ export const commentService = {
         }
 
         await commentRepository.delete(commentId);
+
+        // Invalidate comment count cache for the post
+        await cacheService.del(CacheKeys.postCommentCount(comment.postId));
+        await cacheService.del(CacheKeys.post(comment.postId));
+        console.log(`🗑️  Invalidated comment count cache for post: ${comment.postId}`);
     },
 
     mapCommentToDTO(
