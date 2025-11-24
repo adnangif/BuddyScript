@@ -106,4 +106,5 @@ This application implements a comprehensive Redis caching layer for high-perform
 - [x] Validation errors (short password, malformed email)
 - [x] Duplicate email conflict bubbles to UI
 - [x] Swagger docs generated under `/api/docs`
+- [x] Swagger interactive docs at `/docs`
 
