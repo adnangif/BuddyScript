@@ -4,7 +4,7 @@ export interface ProfileMenuItemProps {
     href: string;
     icon: ReactNode;
     label: string;
-    onClick?: () => void;
+    onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
     className?: string;
 }
 
