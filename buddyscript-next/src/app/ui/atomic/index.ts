@@ -31,6 +31,12 @@ export type { AvatarProps } from './atoms/Avatar';
 export { Badge } from './atoms/Badge';
 export type { BadgeProps } from './atoms/Badge';
 
+export { NavLink } from './atoms/NavLink';
+export type { NavLinkProps } from './atoms/NavLink';
+
+export { SearchInput } from './atoms/SearchInput';
+export type { SearchInputProps } from './atoms/SearchInput';
+
 // Molecules
 export { FormField } from './molecules/FormField';
 export type { FormFieldProps } from './molecules/FormField';
@@ -53,6 +59,12 @@ export type { SuggestedPersonCardProps } from './molecules/SuggestedPersonCard';
 export { FriendActivityCard } from './molecules/FriendActivityCard';
 export type { FriendActivityCardProps } from './molecules/FriendActivityCard';
 
+export { NotificationItem } from './molecules/NotificationItem';
+export type { NotificationItemProps } from './molecules/NotificationItem';
+
+export { ProfileMenuItem } from './molecules/ProfileMenuItem';
+export type { ProfileMenuItemProps } from './molecules/ProfileMenuItem';
+
 // Organisms
 export { AuthLayout } from './organisms/AuthLayout';
 export type { AuthLayoutProps } from './organisms/AuthLayout';
@@ -60,3 +72,9 @@ export { PostCard } from './organisms/PostCard';
 export type { PostCardProps } from './organisms/PostCard';
 export { SidebarSection } from './organisms/SidebarSection';
 export type { SidebarSectionProps } from './organisms/SidebarSection';
+
+export { NotificationDropdown } from './organisms/NotificationDropdown';
+export type { NotificationDropdownProps } from './organisms/NotificationDropdown';
+
+export { ProfileDropdown } from './organisms/ProfileDropdown';
+export type { ProfileDropdownProps } from './organisms/ProfileDropdown';
